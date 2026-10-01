@@ -48,6 +48,7 @@ const roleNavItems: Record<RoleKey, {
     { label: "Assignments", href: "/assignments", icon: ClipboardList },
     { label: "Tests", href: "/tests", icon: FileQuestion },
     { label: "Revision Tests", href: "/revision-tests", icon: RotateCcw },
+    { label: "Attendance", href: "/attendance", icon: ClipboardList },
     { label: "Materials", href: "/teacher/materials", icon: Upload },
     { label: "AI Studio", href: "/teacher/ai", icon: ShieldCheck },
   ],
