@@ -1,0 +1,33 @@
+# Root workspace ignores
+
+# dependencies
+node_modules/
+**/node_modules/
+
+# builds
+dist/
+build/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+
+# local env/secrets
+.env
+.env.*
+!.env.example
+
+# logs/temp
+*.log
+tmp/
+uploads/
+
+# editor/os
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Existing standalone repository; keep it separate from this root repo.
+aps-api/
+sams-api/
