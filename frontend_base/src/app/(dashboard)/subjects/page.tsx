@@ -1,6 +1,6 @@
-import { FlowSkeletonPage } from "@/features/flow-skeletons/flow-skeleton-page"
-import { flowSkeletons } from "@/features/flow-skeletons/flows"
-
-export default function SubjectsPage() {
-  return <FlowSkeletonPage flow={flowSkeletons.subjects} />
+import { redirect } from "next/navigation"
+import { requireSession } from "@/features/context/role-routing"
+export default async function Page() {
+  const session = await requireSession()
+  redirect(`/${session.context.activeRole}/classes`)
 }

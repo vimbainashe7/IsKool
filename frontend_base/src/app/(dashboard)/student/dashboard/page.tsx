@@ -1,12 +1,10 @@
-import { requireActiveRole } from "@/features/context/role-routing"
-import { getStudentDashboardData } from "@/features/dashboards/dashboard-data"
-import { StudentDashboard } from "@/features/dashboards/role-dashboard"
-
-export const dynamic = "force-dynamic"
-
-export default async function Page() {
-  const session = await requireActiveRole("student")
-
-  const data = await getStudentDashboardData(session.context)
-  return <StudentDashboard data={data} context={session.context} />
+import { WorkspacePage } from "@/features/workspace/workspace-page"
+export default function Page() {
+  return (
+    <WorkspacePage
+      title="Student dashboard"
+      view="dashboard"
+      capability="dashboard.student"
+    />
+  )
 }

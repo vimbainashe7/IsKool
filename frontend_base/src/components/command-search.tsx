@@ -5,8 +5,14 @@ import { useRouter } from "next/navigation"
 import { Command as CommandPrimitive } from "cmdk"
 import { Search, type LucideIcon } from "lucide-react"
 
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { appConfig } from "@/config/app"
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import { useSearch } from "@/features/workspace/use-search"
+import { navigationFor } from "@/config/app"
 import type { IsKoolContext } from "@/features/context/session-contract"
 import { hasCapability } from "@/lib/permissions/capabilities"
 import { cn } from "@/lib/utils"
@@ -47,7 +53,10 @@ const CommandList = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <CommandPrimitive.List
     ref={ref}
-    className={cn("max-h-[420px] overflow-y-auto overflow-x-hidden pb-2", className)}
+    className={cn(
+      "max-h-[420px] overflow-y-auto overflow-x-hidden pb-2",
+      className
+    )}
     {...props}
   />
 ))
@@ -108,14 +117,18 @@ type CommandSearchProps = {
   context: IsKoolContext
 }
 
-export function CommandSearch({ open, onOpenChange, context }: CommandSearchProps) {
+export function CommandSearch({
+  open,
+  onOpenChange,
+  context,
+}: CommandSearchProps) {
   const router = useRouter()
+  const [query, setQuery] = React.useState("")
+  const search = useSearch(open ? query : "")
 
-  const searchItems: SearchItem[] = appConfig.navGroups.flatMap((group) =>
+  const searchItems: SearchItem[] = navigationFor(context).flatMap((group) =>
     group.items
-      .filter((item) =>
-        hasCapability(context.capabilities, item.capability)
-      )
+      .filter((item) => hasCapability(context.capabilities, item.capability))
       .flatMap((item) => [
         {
           title: item.title,
@@ -136,10 +149,13 @@ export function CommandSearch({ open, onOpenChange, context }: CommandSearchProp
       ])
   )
 
-  const groupedItems = searchItems.reduce((acc, item) => {
-    acc[item.group] = [...(acc[item.group] ?? []), item]
-    return acc
-  }, {} as Record<string, SearchItem[]>)
+  const groupedItems = searchItems.reduce(
+    (acc, item) => {
+      acc[item.group] = [...(acc[item.group] ?? []), item]
+      return acc
+    },
+    {} as Record<string, SearchItem[]>
+  )
 
   const handleSelect = (url: string) => {
     router.push(url)
@@ -150,10 +166,40 @@ export function CommandSearch({ open, onOpenChange, context }: CommandSearchProp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="overflow-hidden p-0 shadow-2xl sm:max-w-[640px]">
         <DialogTitle className="sr-only">Search IsKool</DialogTitle>
+        <DialogDescription className="sr-only">
+          Search pages, actions and authorized school resources.
+        </DialogDescription>
         <Command>
-          <CommandInput placeholder="Search students, classes, reports, or actions..." autoFocus />
+          <CommandInput
+            value={query}
+            onValueChange={setQuery}
+            aria-label="Search pages and resources"
+            placeholder="Search permitted pages and actions…"
+            autoFocus
+          />
           <CommandList>
             <CommandEmpty>No permitted results found.</CommandEmpty>
+            {search.status && (
+              <p role="status" className="px-4 py-2 text-sm">
+                {search.status}
+              </p>
+            )}
+            {search.results.length > 0 && (
+              <CommandGroup heading="School resources">
+                {search.results.map((result) => (
+                  <CommandItem
+                    key={result.id}
+                    value={`${result.group} ${result.title}`}
+                    onSelect={() => handleSelect(result.href)}
+                  >
+                    {result.title}
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      {result.group}
+                    </span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
             {Object.entries(groupedItems).map(([group, items]) => (
               <CommandGroup key={group} heading={group}>
                 {items.map((item) => {
@@ -178,9 +224,16 @@ export function CommandSearch({ open, onOpenChange, context }: CommandSearchProp
   )
 }
 
-export function SearchTrigger({ onClick }: { onClick: () => void }) {
+export function SearchTrigger({
+  onClick,
+  disabled,
+}: {
+  onClick: () => void
+  disabled?: boolean
+}) {
   return (
     <button
+      disabled={disabled}
       onClick={onClick}
       className="focus-visible:ring-ring inline-flex h-9 w-full items-center justify-start gap-2 rounded-md border bg-background px-3 py-1 text-sm font-medium text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50 md:w-44 lg:w-64"
     >

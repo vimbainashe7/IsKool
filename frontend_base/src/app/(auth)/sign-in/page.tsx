@@ -14,28 +14,39 @@ export default function Page() {
             IsKool
           </Link>
           <div className="space-y-4">
-            <p className="text-sm font-semibold uppercase tracking-wide text-iskool-cream/65">One school platform</p>
-            <h1 className="max-w-md text-4xl font-bold tracking-tight">Student, teacher, and admin workspaces in one account.</h1>
+            <p className="text-sm font-semibold uppercase tracking-wide text-iskool-cream/65">
+              One school platform
+            </p>
+            <h1 className="max-w-md text-4xl font-bold tracking-tight">
+              Student, teacher, and admin workspaces in one account.
+            </h1>
             <p className="max-w-md text-sm leading-6 text-iskool-cream/75">
-              Sign in once. Your school membership, roles, and permissions shape the workspace you can access.
+              Sign in once. Your school membership, roles, and permissions shape
+              the workspace you can access.
             </p>
           </div>
           <div className="grid grid-cols-3 gap-3 text-center text-xs">
             {["Student", "Teacher", "Admin"].map((role) => (
-              <span key={role} className="rounded-xl border border-iskool-cream/15 bg-iskool-cream/10 px-3 py-2">
+              <span
+                key={role}
+                className="rounded-xl border border-iskool-cream/15 bg-iskool-cream/10 px-3 py-2"
+              >
                 {role}
               </span>
             ))}
           </div>
         </section>
         <div className="flex w-full flex-col gap-6 p-6 md:p-8">
-          <Link href="/" className="flex items-center gap-2 self-center font-medium md:hidden">
+          <Link
+            href="/"
+            className="flex items-center gap-2 self-center font-medium md:hidden"
+          >
             <div className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-md">
-            <Logo size={24} />
-          </div>
-          IsKool
-        </Link>
-        <LoginForm1 />
+              <Logo size={24} />
+            </div>
+            IsKool
+          </Link>
+          <LoginForm1 />
         </div>
       </div>
     </div>

@@ -50,4 +50,12 @@ Functions use `SECURITY DEFINER`, fixed `search_path`, and `auth.uid()` predicat
 
 ## Backend Notes
 
-New Supabase projects may require explicit Data API exposure/grants depending on project settings. RLS is still enabled in the migration regardless.
+New Supabase projects may require explicit Data API exposure/grants depending on project settings. RLS is enabled in the blueprint, but existing ownership gaps mean the blueprint is not ready for production ingestion.
+
+## Completion pass verification limits
+
+Callbacks check code/OTP failures and same-origin return paths. Password updates require matching confirmation. Logout and role switching use same-origin POST; role switching validates membership and uses full navigation to discard context caches. Refresh cookies survive redirects. Inactive memberships reach a generic permission screen.
+
+Live Auth requires a configured Supabase project, email/redirect configuration and provisioned fixtures. No such environment is available in this session. Mocked integration and preview E2E do not prove live Auth or deployed RLS. Existing policies allow school-wide private file/classes and teacher-wide AI drafts; child records need composite tenant checks. VIM-49/VIM-59 must fix these. Disabled frontend writes/files do not fix direct database access. The rollback-only RLS suite must run independently on isolated local Supabase.
+
+References checked 2026-10-04: [Supabase SSR](https://supabase.com/docs/guides/auth/server-side/creating-a-client?framework=nextjs), [Next.js proxy](https://nextjs.org/docs/app/api-reference/file-conventions/proxy).

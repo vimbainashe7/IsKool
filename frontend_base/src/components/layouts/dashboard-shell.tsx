@@ -1,28 +1,36 @@
-"use client"
-
-import type * as React from "react"
-
-import { SiteFooter } from "@/components/site-footer"
+import type { ReactNode } from "react"
 import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
+import { AppSidebar } from "@/components/app-sidebar"
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import type { IsKoolContext } from "@/features/context/session-contract"
-
 export function DashboardShell({
   children,
   context,
 }: {
-  children: React.ReactNode
+  children: ReactNode
   context: IsKoolContext
 }) {
   return (
-    <div
-      style={{ "--header-height": "calc(var(--spacing) * 14)" } as React.CSSProperties}
-      className="flex min-h-screen flex-col bg-background"
-    >
-      <SiteHeader context={context} />
-      <main className="@container/main flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6">
-        {children}
-      </main>
-      <SiteFooter />
-    </div>
+    <SidebarProvider>
+      <a
+        href="#workspace-content"
+        className="sr-only z-50 rounded-md bg-background p-3 focus:not-sr-only focus:absolute"
+      >
+        Skip to content
+      </a>
+      <AppSidebar context={context} collapsible="icon" />
+      <SidebarInset className="min-w-0">
+        <SiteHeader context={context} />
+        <main
+          id="workspace-content"
+          tabIndex={-1}
+          className="flex-1 py-5 md:py-7"
+        >
+          {children}
+        </main>
+        <SiteFooter />
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

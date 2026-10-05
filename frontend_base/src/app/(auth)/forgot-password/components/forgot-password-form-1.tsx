@@ -31,7 +31,7 @@ export function ForgotPasswordForm1({
     try {
       const supabase = createClient()
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/confirm?next=/update-password`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/update-password`,
       })
 
       if (error) {
@@ -40,8 +40,8 @@ export function ForgotPasswordForm1({
       }
 
       setMessage("If an account exists for that email, a reset link has been sent.")
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Password reset is not available.")
+    } catch {
+      setMessage("Password recovery is currently unavailable. Try again shortly.")
     } finally {
       setIsSubmitting(false)
     }
@@ -72,7 +72,7 @@ export function ForgotPasswordForm1({
                   />
                 </div>
                 {message && (
-                  <p className="rounded-md border px-3 py-2 text-sm text-muted-foreground">
+                  <p role="status" className="rounded-md border px-3 py-2 text-sm text-muted-foreground">
                     {message}
                   </p>
                 )}

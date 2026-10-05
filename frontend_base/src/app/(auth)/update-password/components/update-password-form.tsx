@@ -26,7 +26,8 @@ import { createClient } from "@/lib/supabase/client"
 
 const schema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
-})
+  confirmPassword: z.string(),
+}).refine(values=>values.password===values.confirmPassword,{message:"Passwords do not match",path:["confirmPassword"]})
 
 type Values = z.infer<typeof schema>
 
@@ -35,7 +36,7 @@ export function UpdatePasswordForm() {
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const form = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { password: "" },
+    defaultValues: { password: "", confirmPassword: "" },
   })
 
   async function onSubmit(values: Values) {
@@ -51,9 +52,10 @@ export function UpdatePasswordForm() {
         return
       }
 
-      window.location.href = "/home"
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Password update is not available.")
+      await supabase.auth.signOut()
+      window.location.href = "/sign-in?notice=password-updated"
+    } catch {
+      setMessage("Password update is currently unavailable. Open the newest recovery link and try again.")
     } finally {
       setIsSubmitting(false)
     }
@@ -81,6 +83,7 @@ export function UpdatePasswordForm() {
                 </FormItem>
               )}
             />
+            <FormField control={form.control} name="confirmPassword" render={({field})=><FormItem><FormLabel>Confirm new password</FormLabel><FormControl><Input type="password" autoComplete="new-password" {...field}/></FormControl><FormMessage/></FormItem>}/>
             {message && (
               <p className="rounded-md border px-3 py-2 text-sm text-muted-foreground">
                 {message}

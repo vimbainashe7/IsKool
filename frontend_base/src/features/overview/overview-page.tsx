@@ -7,18 +7,18 @@ import {
   TrendingUp,
   UserCheck,
   Users,
-} from "lucide-react";
+} from "lucide-react"
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+} from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
 
 const metrics = [
   {
@@ -45,35 +45,38 @@ const metrics = [
     helper: "Current billing cycle",
     icon: Banknote,
   },
-];
+]
 
 const modules = [
   {
     title: "Academics",
-    description: "Classes, subjects, assessment schedules, and learner progress.",
+    description:
+      "Classes, subjects, assessment schedules, and learner progress.",
     icon: BookOpen,
     status: "Ready for API",
   },
   {
     title: "Attendance",
-    description: "Daily registers, late arrivals, absences, and guardian follow-up.",
+    description:
+      "Daily registers, late arrivals, absences, and guardian follow-up.",
     icon: CalendarCheck,
     status: "Model first",
   },
   {
     title: "Communication",
-    description: "Messages for guardians, staff notices, and school announcements.",
+    description:
+      "Messages for guardians, staff notices, and school announcements.",
     icon: MessageSquare,
     status: "Queue backed",
   },
-];
+]
 
 const workQueue = [
   "Define learner and guardian profiles",
   "Map attendance register workflow",
   "Connect fee balances to backend ledger",
   "Add role permissions for admins, teachers, and clerks",
-];
+]
 
 export function OverviewPage() {
   return (
@@ -84,9 +87,12 @@ export function OverviewPage() {
             IsKool Control Center
           </Badge>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">School overview</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              School overview
+            </h1>
             <p className="text-muted-foreground">
-              A clean frontend starting point for enrollment, attendance, fees, and communications.
+              A clean frontend starting point for enrollment, attendance, fees,
+              and communications.
             </p>
           </div>
         </div>
@@ -100,7 +106,9 @@ export function OverviewPage() {
         {metrics.map((metric) => (
           <Card key={metric.label}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{metric.label}</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                {metric.label}
+              </CardTitle>
               <metric.icon className="size-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -119,7 +127,8 @@ export function OverviewPage() {
               <CardTitle>Backend-ready modules</CardTitle>
             </div>
             <CardDescription>
-              Frontend domains are separated so API adapters can be introduced without rewriting screens.
+              Frontend domains are separated so API adapters can be introduced
+              without rewriting screens.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-3">
@@ -128,7 +137,9 @@ export function OverviewPage() {
                 <module.icon className="mb-4 size-5 text-primary" />
                 <div className="space-y-2">
                   <h2 className="font-semibold">{module.title}</h2>
-                  <p className="text-sm text-muted-foreground">{module.description}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {module.description}
+                  </p>
                   <Badge variant="outline">{module.status}</Badge>
                 </div>
               </div>
@@ -139,7 +150,9 @@ export function OverviewPage() {
         <Card>
           <CardHeader>
             <CardTitle>Integration Readiness</CardTitle>
-            <CardDescription>Current frontend foundation score.</CardDescription>
+            <CardDescription>
+              Current frontend foundation score.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2">
@@ -161,5 +174,5 @@ export function OverviewPage() {
         </Card>
       </div>
     </div>
-  );
+  )
 }

@@ -1,4 +1,13 @@
 export const capabilities = [
+  "materials.view",
+  "materials.manage",
+  "submissions.review",
+  "ai.use",
+  "classes.manage",
+  "roles.manage",
+  "enrollments.manage",
+  "audit.view",
+  "timetable.view",
   "home.view",
   "dashboard.student",
   "dashboard.teacher",
@@ -28,6 +37,7 @@ export type RoleKey = "student" | "teacher" | "admin"
 
 export const roleCapabilities: Record<RoleKey, Capability[]> = {
   student: [
+    "materials.view", "timetable.view",
     "home.view",
     "dashboard.student",
     "classes.view",
@@ -39,6 +49,7 @@ export const roleCapabilities: Record<RoleKey, Capability[]> = {
     "settings.manage",
   ],
   teacher: [
+    "materials.view", "materials.manage", "submissions.review", "ai.use", "timetable.view",
     "home.view",
     "dashboard.teacher",
     "classes.view",
@@ -51,6 +62,7 @@ export const roleCapabilities: Record<RoleKey, Capability[]> = {
     "settings.manage",
   ],
   admin: [
+    "classes.manage", "roles.manage", "enrollments.manage", "audit.view", "timetable.view",
     "home.view",
     "dashboard.admin",
     "classes.view",

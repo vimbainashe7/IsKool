@@ -12,9 +12,16 @@ export async function GET(request: NextRequest) {
   }
 
   const roleParam = request.nextUrl.searchParams.get("role")
-  const role = allowedRoles.has(roleParam as RoleKey) ? (roleParam as RoleKey) : "teacher"
+  const role = allowedRoles.has(roleParam as RoleKey)
+    ? (roleParam as RoleKey)
+    : "teacher"
   const cookieStore = await cookies()
 
+  cookieStore.set("iskool-demo-id", crypto.randomUUID(), {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+  })
   cookieStore.set(demoSessionCookie, role, {
     path: "/",
     maxAge: 60 * 60 * 24,

@@ -1,20 +1,10 @@
-import { Bell } from "lucide-react"
-
-import { EmptyState } from "@/components/feedback/state-views"
-import { PageShell } from "@/components/page-shell"
-
-export default function NotificationsPage() {
+import { WorkspacePage } from "@/features/workspace/workspace-page"
+export default function Page() {
   return (
-    <PageShell
-      eyebrow="Updates"
+    <WorkspacePage
       title="Notifications"
-      description="School updates, workflow alerts, and action reminders will deep-link only to permitted resources."
-      icon={Bell}
-    >
-      <EmptyState
-        title="No notifications yet"
-        description="Notifications will deep-link only to resources permitted by the active school and role context."
-      />
-    </PageShell>
+      view="notifications"
+      capability="notifications.view"
+    />
   )
 }

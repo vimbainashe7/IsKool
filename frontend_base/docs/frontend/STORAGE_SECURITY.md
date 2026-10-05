@@ -22,8 +22,10 @@ Original filenames are preserved separately in `submissions.original_filename` o
 
 - Student upload screen: `/student/assignments/[assignmentId]`.
 - Teacher material upload screen: `/teacher/materials`.
-- Uploads go directly to private Supabase Storage using the authenticated browser client.
+- Production upload/download services remain disabled pending VIM-59. Existing object policies permit school-wide reads despite private buckets.
 
 ## Backend Blockers
 
-The frontend currently uses placeholder class ids on upload screens. The backend must resolve assignment-to-class and teacher class selection from RLS-protected data before production.
+The frontend resolves assignment/class/teacher scope from validated server data. File UI supports picker/drop, size/type/empty-file validation, progress, retry/cancel/replace/remove, preview and confirmation. Submitted appears only after a persisted server record/timestamp. Teacher resources distinguish draft/published/archived.
+
+Development uploads save actual binaries under ignored .cache using UUID names and separate original-name/reservation metadata. Finalization checks actor/class/assignment ownership. Downloads check the visible resource and session scope. Fixture downloads are named sample resources. This is not hardened ingestion; production requires signature checks, quarantine/scanning, atomic finalization and independently authorized signed reads. Unreferenced canceled/replaced preview files remain until local cache cleanup. See BACKEND_CONTRACTS.md.

@@ -197,3 +197,7 @@ html {
 .animate-logo-scroll:hover {
   animation-play-state: paused;
 }
+
+.iskool-select { display:block; width:100%; min-height:44px; border:1px solid var(--border); border-radius:8px; background:var(--background); color:var(--foreground); padding:8px 12px; }
+:where(a,button,input,textarea,select):focus-visible { outline:2px solid var(--primary); outline-offset:3px; }
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;scroll-behavior:auto!important;}}

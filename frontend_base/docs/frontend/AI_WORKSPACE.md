@@ -23,4 +23,6 @@ No AI provider key is exposed to client components. Server-only configuration us
 
 ## Current Status
 
-`/teacher/ai` renders the role workspace and tool entry points. The server provider abstraction exists, but no production LLM provider is connected yet.
+`/teacher/ai` has Compile Notes, Test Generator and Assignment Generator configuration, persisted development jobs, editable draft/question review, reorder/delete, review/approval, explicit publishing/archive and conversion to ordinary assignment drafts. Jobs and content have independent lifecycles. Returning or refreshing retains a preview job. Changed reviewed content requires another review before publication.
+
+No production LLM/queue is connected: VIM-60 blocks execution, VIM-59 ingestion, and VIM-55 content publishing/question bank. Development output is clearly identified. The retained provider boundary refuses production mocks; no provider secret reaches browser code. Real cancellation/selected-section regeneration require backend support.

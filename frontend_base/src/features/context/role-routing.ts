@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 
+import { createClient } from "@/lib/supabase/server"
 import { getCurrentSession } from "@/features/context/get-current-session"
 import type { SessionContract } from "@/features/context/session-contract"
 import type { RoleKey } from "@/lib/permissions/capabilities"
@@ -14,13 +15,18 @@ export async function requireSession(): Promise<SessionContract> {
   const session = await getCurrentSession()
 
   if (!session) {
+    const client = await createClient()
+    const identity = await client?.auth.getUser()
+    if (identity?.data.user) redirect("/errors/forbidden")
     redirect("/sign-in")
   }
 
   return session
 }
 
-export async function requireActiveRole(role: RoleKey): Promise<SessionContract> {
+export async function requireActiveRole(
+  role: RoleKey
+): Promise<SessionContract> {
   const session = await requireSession()
 
   if (session.context.activeRole !== role) {

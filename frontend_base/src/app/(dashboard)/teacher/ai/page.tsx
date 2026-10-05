@@ -1,5 +1,6 @@
-import { TeacherAiWorkspace } from "@/features/ai/teacher-ai-workspace"
-
+import { WorkspacePage } from "@/features/workspace/workspace-page"
 export default function Page() {
-  return <TeacherAiWorkspace />
+  return (
+    <WorkspacePage title="Teacher AI Studio" view="ai" capability="ai.use" />
+  )
 }

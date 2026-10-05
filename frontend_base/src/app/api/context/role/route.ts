@@ -7,6 +7,12 @@ import type { RoleKey } from "@/lib/permissions/capabilities"
 const allowedRoles = new Set<RoleKey>(["student", "teacher", "admin"])
 
 export async function POST(request: Request) {
+  if (request.headers.get("origin") !== new URL(request.url).origin) {
+    return NextResponse.json(
+      { error: "This request could not be verified." },
+      { status: 403 }
+    )
+  }
   const body = await request.json().catch(() => null)
   const role = body?.role as RoleKey | undefined
 
@@ -29,6 +35,8 @@ export async function POST(request: Request) {
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
     sameSite: "lax",
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
   })
 
   return NextResponse.json({ role })

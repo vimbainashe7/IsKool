@@ -1,14 +1,24 @@
 import type { SessionContract } from "@/features/context/session-contract"
-import { capabilitiesForRoles, type RoleKey } from "@/lib/permissions/capabilities"
+import {
+  capabilitiesForRoles,
+  type RoleKey,
+} from "@/lib/permissions/capabilities"
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 
 export const demoSessionCookie = "iskool-demo-role"
 
 export function canUseDemoSession() {
-  return process.env.NODE_ENV !== "production" && !isSupabaseConfigured()
+  return (
+    process.env.NODE_ENV !== "production" &&
+    process.env.ISKOOL_ENABLE_DEMO === "true" &&
+    !isSupabaseConfigured()
+  )
 }
 
-export function createDemoSession(role: RoleKey, activeRole = role): SessionContract {
+export function createDemoSession(
+  role: RoleKey,
+  activeRole = role
+): SessionContract {
   return {
     status: "unconfigured",
     context: {
@@ -23,7 +33,7 @@ export function createDemoSession(role: RoleKey, activeRole = role): SessionCont
         brandColor: "#2a4178",
       },
       membershipId: `00000000-0000-0000-0000-0000000000${activeRole === "student" ? "11" : activeRole === "teacher" ? "22" : "33"}`,
-      roles: ["student", "teacher", "admin"],
+      roles: role === "student" ? ["student"] : ["teacher", "admin"],
       activeRole,
       capabilities: capabilitiesForRoles([activeRole]),
     },

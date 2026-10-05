@@ -23,6 +23,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { safeReturnPath } from "@/lib/auth/safe-return-path"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 
@@ -50,7 +51,7 @@ export function LoginForm1({
   })
 
   React.useEffect(() => {
-    setCanDemo(!process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NODE_ENV !== "production")
+    setCanDemo(process.env.NEXT_PUBLIC_ISKOOL_DEMO === "true" && !process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NODE_ENV !== "production")
   }, [])
 
   async function onSubmit(values: LoginFormValues) {
@@ -66,9 +67,9 @@ export function LoginForm1({
         return
       }
 
-      window.location.href = searchParams.get("next") || "/home"
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Sign in is not available.")
+      window.location.href = safeReturnPath(searchParams.get("next"))
+    } catch {
+      setMessage("Sign in is currently unavailable. Try again shortly.")
     } finally {
       setIsSubmitting(false)
     }
@@ -123,7 +124,7 @@ export function LoginForm1({
                     )}
                   />
                   {message && (
-                    <p className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    <p role="alert" className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                       {message}
                     </p>
                   )}

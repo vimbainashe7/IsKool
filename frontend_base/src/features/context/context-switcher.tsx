@@ -1,80 +1,67 @@
 "use client"
-
-import * as React from "react"
-import { useRouter } from "next/navigation"
-import { Check, ChevronsUpDown } from "lucide-react"
-
-import type { IsKoolContext } from "@/features/context/session-contract"
-import { Badge } from "@/components/ui/badge"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu"
-
-const roleLabels: Record<IsKoolContext["activeRole"], string> = {
-  student: "Student",
-  teacher: "Teacher",
-  admin: "Admin",
-}
-
-const roleDashboards: Record<IsKoolContext["activeRole"], string> = {
-  student: "/student/dashboard",
-  teacher: "/teacher/dashboard",
-  admin: "/admin/dashboard",
-}
-
+import type { IsKoolContext } from "./session-contract"
 export function ContextSwitcher({ context }: { context: IsKoolContext }) {
-  const router = useRouter()
-  const [selectedRole, setSelectedRole] = React.useState(context.activeRole)
-
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState("")
   async function switchRole(role: IsKoolContext["activeRole"]) {
-    setSelectedRole(role)
-    await fetch("/api/context/role", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ role }),
-    })
-    router.push(roleDashboards[role])
-    router.refresh()
+    if (pending || role === context.activeRole) return
+    setPending(true)
+    setError("")
+    try {
+      const response = await fetch("/api/context/role", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ role }),
+      })
+      if (!response.ok) throw new Error()
+      // Full navigation discards all in-memory context-specific caches.
+      window.location.assign(`/${role}/dashboard`)
+    } catch {
+      setError("Work context could not be changed. Try again.")
+      setPending(false)
+    }
   }
-
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="h-9 gap-2">
-          <span className="hidden text-left sm:block">{context.school.name}</span>
-          <Badge variant="secondary" className="hidden md:inline-flex">
-            {roleLabels[selectedRole]}
-          </Badge>
-          <ChevronsUpDown className="size-4 text-muted-foreground" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-72">
-        <DropdownMenuLabel>
-          <div className="space-y-1">
-            <p>{context.school.name}</p>
-            <p className="text-xs font-normal text-muted-foreground">
-              Active role controls workspace navigation. Database RLS still authorizes data.
-            </p>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {context.roles.map((role) => (
-          <DropdownMenuItem
-            key={role}
-            onClick={() => switchRole(role)}
-            className="cursor-pointer"
+    <div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            disabled={pending}
+            aria-label="Switch work context"
+            className="h-11 capitalize"
           >
-            <span>{roleLabels[role]}</span>
-            {selectedRole === role && <Check className="ml-auto size-4" />}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+            {pending ? "Switching?" : context.activeRole}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>{context.school.name}</DropdownMenuLabel>
+          {context.roles.map((role) => (
+            <DropdownMenuItem
+              key={role}
+              onSelect={() => switchRole(role)}
+              className="capitalize"
+            >
+              {role}
+              {role === context.activeRole ? " (active)" : ""}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {error && (
+        <p role="alert" className="max-w-44 text-xs text-destructive">
+          {error}
+        </p>
+      )}
+    </div>
   )
 }

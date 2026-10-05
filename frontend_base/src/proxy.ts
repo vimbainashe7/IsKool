@@ -10,6 +10,8 @@ const publicRoutes = new Set([
   '/forgot-password',
   '/update-password',
   '/auth/confirm',
+  '/auth/callback',
+  '/reset-password',
 ])
 
 export async function proxy(request: NextRequest) {
@@ -23,24 +25,32 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/sign-up', request.url))
   }
 
-  if (pathname.startsWith('/auth/') && pathname !== '/auth/confirm') {
+  if (pathname.startsWith('/auth/') && !['/auth/confirm', '/auth/callback'].includes(pathname)) {
     return NextResponse.redirect(
       new URL(pathname.replace('/auth', ''), request.url)
     )
   }
 
   const { response, user } = await refreshSupabaseSession(request)
+  response.headers.set('Cache-Control', 'private, no-store')
+  function redirectWithSession(url: URL) {
+    const redirect = NextResponse.redirect(url)
+    response.cookies.getAll().forEach(cookie => redirect.cookies.set(cookie))
+    redirect.headers.set('Cache-Control', 'private, no-store')
+    return redirect
+  }
+  if (pathname.startsWith("/api/")) return response
   const isPublicRoute = publicRoutes.has(pathname) || pathname.startsWith('/errors/')
   const hasDemoSession = canUseDemoSession() && Boolean(request.cookies.get(demoSessionCookie)?.value)
 
   if (!user && !hasDemoSession && !isPublicRoute) {
     const signInUrl = new URL('/sign-in', request.url)
     signInUrl.searchParams.set('next', pathname)
-    return NextResponse.redirect(signInUrl)
+    return redirectWithSession(signInUrl)
   }
 
   if ((user || hasDemoSession) && (pathname === '/sign-in' || pathname === '/sign-up')) {
-    return NextResponse.redirect(new URL('/home', request.url))
+    return redirectWithSession(new URL('/home', request.url))
   }
 
   return response
@@ -48,6 +58,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

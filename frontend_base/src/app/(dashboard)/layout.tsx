@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation"
+
 
 import { DashboardShell } from "@/components/layouts/dashboard-shell"
-import { getCurrentSession } from "@/features/context/get-current-session"
+import { requireSession } from "@/features/context/role-routing"
 
 export const dynamic = "force-dynamic"
 
@@ -10,11 +10,8 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const session = await getCurrentSession()
+  const session = await requireSession()
 
-  if (!session) {
-    redirect("/sign-in")
-  }
 
   return <DashboardShell context={session.context}>{children}</DashboardShell>
 }

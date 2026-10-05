@@ -1,12 +1,10 @@
-import { requireActiveRole } from "@/features/context/role-routing"
-import { getAdminDashboardData } from "@/features/dashboards/dashboard-data"
-import { AdminDashboard } from "@/features/dashboards/role-dashboard"
-
-export const dynamic = "force-dynamic"
-
-export default async function Page() {
-  const session = await requireActiveRole("admin")
-
-  const data = await getAdminDashboardData(session.context)
-  return <AdminDashboard data={data} context={session.context} />
+import { WorkspacePage } from "@/features/workspace/workspace-page"
+export default function Page() {
+  return (
+    <WorkspacePage
+      title="Admin dashboard"
+      view="dashboard"
+      capability="dashboard.admin"
+    />
+  )
 }

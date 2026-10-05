@@ -19,10 +19,14 @@ function cleanSegment(value: string) {
 
 function extensionFromFileName(fileName: string) {
   const extension = fileName.split(".").pop()
-  return extension && extension !== fileName ? cleanSegment(extension.toLowerCase()) : "bin"
+  return extension && extension !== fileName
+    ? cleanSegment(extension.toLowerCase())
+    : "bin"
 }
 
-export function buildAssignmentSubmissionPath(input: AssignmentSubmissionPathInput) {
+export function buildAssignmentSubmissionPath(
+  input: AssignmentSubmissionPathInput
+) {
   const extension = input.extension ? cleanSegment(input.extension) : "bin"
   return [
     "schools",

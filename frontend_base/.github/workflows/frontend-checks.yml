@@ -1,0 +1,38 @@
+name: IsKool frontend checks
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.6.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend_base/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: frontend_base
+      - run: pnpm lint
+        working-directory: frontend_base
+      - run: pnpm typecheck
+        working-directory: frontend_base
+      - run: pnpm test
+        working-directory: frontend_base
+      - run: pnpm build
+        working-directory: frontend_base
+      - run: pnpm check:secrets
+        working-directory: frontend_base
+      - run: pnpm exec playwright install --with-deps chromium
+        working-directory: frontend_base
+      - run: pnpm test:e2e
+        working-directory: frontend_base
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-evidence
+          path: |
+            frontend_base/playwright-report
+            frontend_base/test-results

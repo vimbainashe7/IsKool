@@ -39,7 +39,9 @@ The role switcher stores `iskool-active-role` as UI context only. RLS remains au
 
 ## Data Fetching
 
-Server Components are the default for reads. Dashboard data adapters use Supabase queries through RLS and fall back to clearly labeled fixture data only when Supabase is unconfigured or a query fails during local frontend work.
+Server pages resolve identity, capabilities and bounded school/ownership-scoped reads through `features/workspace/server.ts`. Query failures produce errors, never fixture fallback. Interactive workflow components consume Zod-validated UI projections and typed mutation contracts. These are read projections, not duplicate database models; generated DB types are unavailable.
+
+The shared sidebar/header uses one capability navigation source. Student, Teacher and Admin routes render different task experiences. Gradebook and AI load dynamically. Unsupported live mutations/files fail safely. The explicit non-production adapter persists records/files per preview session; it is not production Auth, Storage or a queue. Full backend dependencies are in BACKEND_CONTRACTS.md.
 
 ## Security Model
 

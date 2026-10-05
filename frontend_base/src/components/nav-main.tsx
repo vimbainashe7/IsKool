@@ -11,6 +11,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import {
+  useSidebar,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
@@ -21,18 +22,13 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 
-export function NavMain({
-  label,
-  items,
-}: {
-  label: string
-  items: NavItem[]
-}) {
+export function NavMain({ label, items }: { label: string; items: NavItem[] }) {
   const pathname = usePathname()
+  const { setOpenMobile } = useSidebar()
 
   // Check if any subitem is active to determine if parent should be open
   const shouldBeOpen = (item: NavItem) => {
-    return item.items?.some(subItem => pathname === subItem.url) || false
+    return item.items?.some((subItem) => pathname === subItem.url) || false
   }
 
   return (
@@ -50,7 +46,10 @@ export function NavMain({
               {item.items?.length ? (
                 <>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={item.title} className="cursor-pointer">
+                    <SidebarMenuButton
+                      tooltip={item.title}
+                      className="cursor-pointer"
+                    >
                       {item.icon && <item.icon />}
                       <span>{item.title}</span>
                       <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -60,11 +59,20 @@ export function NavMain({
                     <SidebarMenuSub>
                       {item.items?.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild className="cursor-pointer" isActive={pathname === subItem.url}>
+                          <SidebarMenuSubButton
+                            asChild
+                            className="cursor-pointer"
+                            isActive={pathname === subItem.url}
+                          >
                             <Link
                               href={subItem.url}
+                              onClick={() => setOpenMobile(false)}
                               target={subItem.target}
-                              rel={subItem.target === "_blank" ? "noopener noreferrer" : undefined}
+                              rel={
+                                subItem.target === "_blank"
+                                  ? "noopener noreferrer"
+                                  : undefined
+                              }
                             >
                               <span>{subItem.title}</span>
                             </Link>
@@ -75,11 +83,21 @@ export function NavMain({
                   </CollapsibleContent>
                 </>
               ) : (
-                <SidebarMenuButton asChild tooltip={item.title} className="cursor-pointer" isActive={pathname === item.url}>
+                <SidebarMenuButton
+                  asChild
+                  tooltip={item.title}
+                  className="cursor-pointer"
+                  isActive={pathname === item.url}
+                >
                   <Link
                     href={item.url}
+                    onClick={() => setOpenMobile(false)}
                     target={item.target}
-                    rel={item.target === "_blank" ? "noopener noreferrer" : undefined}
+                    rel={
+                      item.target === "_blank"
+                        ? "noopener noreferrer"
+                        : undefined
+                    }
                   >
                     {item.icon && <item.icon />}
                     <span>{item.title}</span>

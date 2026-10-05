@@ -82,8 +82,8 @@ export function SignupForm1({
 
       setMessage("Check your email to confirm the account. A school admin must still attach roles before dashboard access.")
       form.reset()
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Signup is not available.")
+    } catch {
+      setMessage("Account creation is currently unavailable. Try again shortly.")
     } finally {
       setIsSubmitting(false)
     }
