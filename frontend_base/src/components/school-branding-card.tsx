@@ -67,6 +67,7 @@ export function SchoolBrandingCard({ school }: { school: IsKoolContext["school"]
           <Input
             ref={inputRef}
             type="file"
+            aria-label="School logo"
             accept="image/png,image/jpeg,image/svg+xml,image/webp"
             onChange={previewLogo}
           />

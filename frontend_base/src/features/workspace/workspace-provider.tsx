@@ -23,9 +23,11 @@ const Context = createContext<{
 export function WorkspaceProvider({
   initial,
   children,
+  previewIndicator = "banner",
 }: {
   initial: Workspace
   children: React.ReactNode
+  previewIndicator?: "banner" | "badge"
 }) {
   const hydrated = useSyncExternalStore(
     subscribeHydration,
@@ -73,7 +75,22 @@ export function WorkspaceProvider({
   }
   return (
     <Context.Provider value={{ data, busy, refresh, mutate }}>
-      {data.mode === "demo" && (
+      {data.mode === "demo" &&
+        previewIndicator === "badge" &&
+        process.env.NODE_ENV !== "production" && (
+          <p
+            role="status"
+            className="mb-3 text-right text-[10px] text-muted-foreground"
+          >
+            <span
+              className="rounded-full border px-2 py-1"
+              title="Development fixtures and simulated services"
+            >
+              Dev data
+            </span>
+          </p>
+        )}
+      {data.mode === "demo" && previewIndicator === "banner" && (
         <p
           role="status"
           className="mb-4 rounded-xl border border-amber-600 bg-amber-50 p-3 text-sm text-amber-950"

@@ -1,5 +1,6 @@
 "use client"
 import { useEffect, useState } from "react"
+import { BookOpen, ClipboardCheck, NotebookPen } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import {
   useWorkspace,
@@ -101,6 +102,18 @@ export function AiStudio() {
             onClick={() => setTool(t.id)}
             aria-pressed={tool === t.id}
           >
+            <span
+              aria-hidden="true"
+              className="mb-4 inline-flex size-11 items-center justify-center rounded-xl bg-secondary text-secondary-foreground"
+            >
+              {t.id === "compile-notes" ? (
+                <BookOpen size={24} />
+              ) : t.id === "create-test" ? (
+                <ClipboardCheck size={24} />
+              ) : (
+                <NotebookPen size={24} />
+              )}
+            </span>
             <h2 className="text-lg font-semibold">{t.label}</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               {t.description}

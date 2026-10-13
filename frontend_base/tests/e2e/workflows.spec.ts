@@ -5,7 +5,7 @@ async function preview(page: Page, role: string) {
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
     `${role[0].toUpperCase() + role.slice(1)} dashboard`
   )
-  await expect(page.getByText(/Development preview/)).toBeVisible()
+  await expect(page.getByText(/Development preview|Dev data/)).toBeVisible()
 }
 async function confirm(page: Page, label: string) {
   await page.getByRole("button", { name: label, exact: true }).click()
@@ -200,6 +200,7 @@ test("admin search, user detail, confirmed role change, context switch and logou
   await page.getByRole("button", { name: "Switch work context" }).click()
   await page.getByRole("menuitem", { name: "teacher", exact: true }).click()
   await expect(page).toHaveURL(/teacher\/dashboard/)
+  await expect(page.getByRole("button", { name: "Search IsKool" })).toBeEnabled()
   await page.getByRole("button", { name: "Profile menu" }).click()
   await page.getByRole("button", { name: "Sign out", exact: true }).click()
   await expect(page).toHaveURL(/sign-in/)
