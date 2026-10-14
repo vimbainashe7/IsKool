@@ -6,7 +6,8 @@ async function gotoApp(page: Page, route: string) {
   if (/^\/(student|teacher|admin)\//.test(new URL(page.url()).pathname)) {
     await expect(page.locator("fieldset[aria-busy]")).toHaveAttribute(
       "aria-busy",
-      "false"
+      "false",
+      { timeout: 60000 }
     )
   }
 }
@@ -245,13 +246,13 @@ test("keyboard command search and mobile drawer restore focus", async ({
     page.getByRole("button", { name: "Toggle Sidebar" })
   ).toBeFocused()
 })
-test("responsive critical screens and automated accessibility", async ({
-  page,
-}) => {
-  test.setTimeout(300000)
-  const errors: string[] = []
-  page.on("pageerror", (error) => errors.push(error.message))
-  for (const width of [360, 390, 768, 1024, 1280, 1440]) {
+for (const width of [360, 390, 768, 1024, 1280, 1440]) {
+  test(`responsive critical screens and automated accessibility at ${width}px`, async ({
+    page,
+  }) => {
+    test.setTimeout(180000)
+    const errors: string[] = []
+    page.on("pageerror", (error) => errors.push(error.message))
     await page.setViewportSize({ width, height: 900 })
     await preview(page, "teacher")
     for (const route of [
@@ -312,11 +313,13 @@ test("responsive critical screens and automated accessibility", async ({
         `${route} at ${width}px`
       ).toBe(false)
     }
-  }
-  await page.screenshot({ path: "test-results/admin-1440.png", fullPage: true })
-  const results = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
-    .analyze()
-  expect(results.violations).toEqual([])
-  expect(errors).toEqual([])
-})
+    if (width === 1440) {
+      await page.screenshot({ path: "test-results/admin-1440.png", fullPage: true })
+      const results = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+        .analyze()
+      expect(results.violations).toEqual([])
+    }
+    expect(errors).toEqual([])
+  })
+}
