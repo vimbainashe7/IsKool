@@ -10,6 +10,8 @@ export default defineConfig({
     },
   },
   test: {
+    // Keep the quality gate usable on development machines running Next.js too.
+    maxWorkers: 1,
     environment: "jsdom",
     setupFiles: ["./tests/setup.ts"],
     include: ["tests/**/*.test.{ts,tsx}"],
