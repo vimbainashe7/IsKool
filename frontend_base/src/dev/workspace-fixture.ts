@@ -1,14 +1,52 @@
 import type { Workspace } from "@/features/workspace/contracts"
-export function createWorkspaceFixture(count = 30): Workspace {
+
+const schoolTimeZone = "Africa/Harare"
+const weekdays = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+]
+
+type WorkspaceFixtureOptions = {
+  now?: Date | string | number
+}
+
+function instantMs(value: WorkspaceFixtureOptions["now"]) {
+  if (value === undefined) return Date.now()
+  const ms = value instanceof Date ? value.getTime() : new Date(value).getTime()
+  if (Number.isNaN(ms)) {
+    throw new Error("createWorkspaceFixture now must be a valid instant.")
+  }
+  return ms
+}
+
+function schoolWeekday(instant: Date) {
+  const weekdayName = new Intl.DateTimeFormat("en-US", {
+    timeZone: schoolTimeZone,
+    weekday: "long",
+  }).format(instant)
+
+  return weekdays.indexOf(weekdayName) + 1
+}
+
+export function createWorkspaceFixture(
+  count = 30,
+  options: WorkspaceFixtureOptions = {}
+): Workspace {
   const students = Array.from({ length: count }, (_, i) => ({
     id: `student-${i + 1}`,
     name: `Learner ${String(i + 1).padStart(3, "0")}`,
     status: "active" as const,
     roles: ["student" as const],
   }))
-  const now = Date.now()
+  const now = instantMs(options.now)
+  const asOf = new Date(now)
   return {
-    asOf: new Date(now).toISOString(),
+    asOf: asOf.toISOString(),
     mode: "demo",
     userId: "demo-teacher",
     membershipId: "teacher-1",
@@ -114,7 +152,7 @@ export function createWorkspaceFixture(count = 30): Workspace {
       {
         id: "slot-1",
         classId: "class-1",
-        weekday: new Date().getDay() || 7,
+        weekday: schoolWeekday(asOf),
         start: "08:00",
         end: "09:00",
         room: "Room 4",

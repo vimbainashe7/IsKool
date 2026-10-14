@@ -2,12 +2,29 @@ import { describe, it, expect } from "vitest"
 import { createWorkspaceFixture } from "@/dev/workspace-fixture"
 import { teacherModel } from "@/features/teacher-workspace/model"
 function fixture() {
-  const w = createWorkspaceFixture()
+  const w = createWorkspaceFixture(30, { now: "2026-10-07T08:00:00Z" })
   w.membershipId = "teacher-1"
-  w.asOf = "2026-10-07T08:00:00Z"
   return w
 }
 describe("Teacher workspace projections", () => {
+  it.each([
+    ["2026-10-06T21:59:59Z", 2],
+    ["2026-10-06T22:00:00Z", 3],
+    ["2026-10-06T23:59:59Z", 3],
+    ["2026-10-07T00:00:00Z", 3],
+    ["2026-10-10T22:00:00Z", 7],
+  ])("aligns fixture and model weekdays at %s", (now, weekday) => {
+    const w = createWorkspaceFixture(30, { now })
+    expect(w.asOf).toBe(new Date(now).toISOString())
+    expect(w.timetable[0].weekday).toBe(weekday)
+    expect(teacherModel(w).weekday).toBe(weekday)
+    expect(teacherModel(w).today).toHaveLength(1)
+  })
+  it("rejects an invalid fixture instant", () => {
+    expect(() => createWorkspaceFixture(30, { now: "invalid" })).toThrow(
+      "must be a valid instant"
+    )
+  })
   it("only projects classes assigned to the active teacher", () => {
     const w = fixture()
     w.teachers = w.teachers.filter((t) => t.classId === "class-1")
@@ -54,6 +71,7 @@ describe("Teacher workspace projections", () => {
   })
   it("uses school-local weekday across UTC midnight and excludes elapsed lessons", () => {
     const w = fixture()
+    expect(w.timetable[0].weekday).toBe(3)
     w.asOf = "2026-10-06T23:00:00Z"
     expect(teacherModel(w).weekday).toBe(3)
     expect(teacherModel(w).today).toHaveLength(1)
