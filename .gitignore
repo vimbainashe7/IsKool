@@ -21,6 +21,9 @@ coverage/
 *.log
 tmp/
 uploads/
+bootstrap/nest-service-template/prisma/generated/
+**/playwright-report/
+**/test-results/
 
 # editor/os
 .DS_Store

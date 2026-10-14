@@ -1,0 +1,25 @@
+# Database Conventions
+
+- Use Supabase local PostgreSQL for development and PostgreSQL in production.
+- Use `supabase/migrations/` as the canonical physical migration authority.
+- Use Prisma as the typed ORM/query layer, not as a competing physical migration history.
+- Use `database/prisma/schema.prisma` as the canonical Prisma mapping.
+- Use PostgreSQL-generated UUIDs for platform tenant and identity tables.
+- Store timestamps in UTC with `timestamptz`.
+- Use `created_at` and `updated_at`.
+- Maintain `updated_at` consistently with database triggers unless an ADR explicitly chooses an application-managed timestamp for a later table family.
+- Store future financial amounts as `numeric(19,4)` with explicit currency fields; never use floating-point types for money.
+- Do not use blanket soft deletes.
+- Store money as exact decimal or minor integer units, never float.
+- Put uniqueness in the database.
+- Use foreign keys for authoritative relations.
+- Enable PostgreSQL Row Level Security on tenant-sensitive tables.
+- Runtime application database roles must not be superuser and must not have `BYPASSRLS`.
+- Application code sets `iskool.user_id`, `iskool.school_id`, and `iskool.membership_id` as transaction-local PostgreSQL settings before tenant-scoped repository work.
+- Do not use Supabase Auth helpers such as `auth.uid()` for IsKool domain RLS.
+- Services own explicit transaction boundaries.
+- Avoid slow network calls inside transactions.
+- Use `READ COMMITTED` for documented financial paths.
+- Make migrations forward-safe.
+- Destructive migrations require an explicit plan.
+- Name indexes consistently and document high-value indexes.
