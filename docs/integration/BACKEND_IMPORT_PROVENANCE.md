@@ -18,10 +18,12 @@ The existing local change in `scripts/acceptance/dev-backend.mjs` is preserved:
 `shuttingDown` is initialized before `waitForReadiness()` starts. The original
 backend checkout is retained without edits.
 
-The owner authorized making IsKool private on 2026-10-14. This branch must remain
-local until GitHub confirms the destination is private. The CLI accounts available
-in this session have read-only repository access. The owner GitHub connector can
-create PRs but exposes no repository visibility update. No browser is available.
+On 2026-10-14 the owner revised the visibility decision: keep IsKool public and
+continue the backend import. Publication of this reviewed source snapshot is
+authorized under that instruction. The branch remains local because the CLI
+accounts have read-only repository access and the owner's GitHub integration
+returns HTTP 403 for Git tree and branch creation. The Git push dry-run likewise
+returned permission denied. Repository visibility is not the remaining blocker.
 
 Validation must include both backend `npm run verify` gates and frontend checks
 before merging. Live PostgreSQL/RLS and browser login acceptance remain pending:
