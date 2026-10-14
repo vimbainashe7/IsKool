@@ -51,7 +51,7 @@ test("student role guards, assignment upload and server-confirmed submission per
   await gotoApp(page, "/admin/dashboard")
   await expect(page).toHaveURL(/student\/dashboard/)
   const blocked = await page.request.post("/api/workspace", {
-    headers: { origin: "http://localhost:3100" },
+    headers: { origin: new URL(page.url()).origin },
     data: {
       action: "member.update",
       memberId: "student-1",

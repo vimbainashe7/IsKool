@@ -1,4 +1,9 @@
 import { defineConfig, devices } from "@playwright/test"
+const port = process.env.ISKOOL_E2E_PORT ?? "3100"
+if (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535) {
+  throw new Error("ISKOOL_E2E_PORT must be a valid local port.")
+}
+const baseURL = `http://localhost:${Number(port)}`
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false,
@@ -7,14 +12,14 @@ export default defineConfig({
   expect: { timeout: 15000 },
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
-    baseURL: "http://localhost:3100",
+    baseURL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "pnpm dev --port 3100",
-    url: "http://localhost:3100/sign-in",
+    command: `pnpm dev --port ${Number(port)}`,
+    url: `${baseURL}/sign-in`,
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
     env: {
