@@ -1,7 +1,19 @@
 import { test, expect, type Page } from "@playwright/test"
 import AxeBuilder from "@axe-core/playwright"
+
+async function gotoApp(page: Page, route: string) {
+  await page.goto(route, { waitUntil: "domcontentloaded" })
+  if (/^\/(student|teacher|admin)\//.test(new URL(page.url()).pathname)) {
+    await expect(page.locator("fieldset[aria-busy]")).toHaveAttribute(
+      "aria-busy",
+      "false",
+      { timeout: 60000 }
+    )
+  }
+}
+
 async function preview(page: Page, role: string) {
-  await page.goto(`/api/dev/demo-login?role=${role}`)
+  await gotoApp(page, `/api/dev/demo-login?role=${role}`)
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
     `${role[0].toUpperCase() + role.slice(1)} dashboard`
   )
@@ -18,17 +30,15 @@ async function confirm(page: Page, label: string) {
 test("unauthenticated protection, callback failure, recovery form and expired session", async ({
   page,
 }) => {
-  await page.goto("/admin/dashboard")
+  await gotoApp(page, "/admin/dashboard")
   await expect(page).toHaveURL(/sign-in/)
   await page.getByRole("link", { name: "Forgot your password?" }).click()
   await expect(page.getByRole("textbox", { name: "Email" })).toBeVisible()
-  await page.goto(
-    "/auth/confirm?token_hash=bad&type=recovery&next=//evil.example"
-  )
+  await gotoApp(page, "/auth/confirm?token_hash=bad&type=recovery&next=//evil.example")
   await expect(page).toHaveURL(/sign-in\?notice=invalid-link/)
   await preview(page, "student")
   await page.context().clearCookies()
-  await page.goto("/student/dashboard")
+  await gotoApp(page, "/student/dashboard")
   await expect(page).toHaveURL(/sign-in/)
   expect((await page.request.get("/api/workspace")).status()).toBe(401)
 })
@@ -36,12 +46,12 @@ test("student role guards, assignment upload and server-confirmed submission per
   page,
 }) => {
   await preview(page, "student")
-  await page.goto("/teacher/dashboard")
+  await gotoApp(page, "/teacher/dashboard")
   await expect(page).toHaveURL(/student\/dashboard/)
-  await page.goto("/admin/dashboard")
+  await gotoApp(page, "/admin/dashboard")
   await expect(page).toHaveURL(/student\/dashboard/)
   const blocked = await page.request.post("/api/workspace", {
-    headers: { origin: "http://localhost:3100" },
+    headers: { origin: new URL(page.url()).origin },
     data: {
       action: "member.update",
       memberId: "student-1",
@@ -50,10 +60,15 @@ test("student role guards, assignment upload and server-confirmed submission per
     },
   })
   expect(blocked.status()).toBe(403)
-  await page.goto("/student/assignments")
+  await gotoApp(page, "/student/assignments")
   await page
     .getByRole("link", { name: "Algebra: simultaneous equations" })
     .click()
+  await expect(page).toHaveURL(/student\/assignments\/assignment-1/)
+  await expect(page.locator("fieldset[aria-busy]")).toHaveAttribute(
+    "aria-busy",
+    "false"
+  )
   await page.getByLabel("Choose a file or drop it here").setInputFiles({
     name: "answers.txt",
     mimeType: "text/plain",
@@ -70,11 +85,11 @@ test("student role guards, assignment upload and server-confirmed submission per
   await page.reload()
   await expect(page.getByText("answers.txt", { exact: true })).toBeVisible()
   await expect(page.getByText(/Status:/)).toContainText("Submitted")
-  await page.goto("/student/grades")
+  await gotoApp(page, "/student/grades")
   await expect(
     page.getByText(/released marks and feedback will appear here/)
   ).toBeVisible()
-  await page.goto("/student/notes")
+  await gotoApp(page, "/student/notes")
   await expect(
     page.getByRole("link", { name: "Algebra worked examples" })
   ).toBeVisible()
@@ -83,7 +98,7 @@ test("teacher assignment creation, material upload, review and gradebook persist
   page,
 }) => {
   await preview(page, "teacher")
-  await page.goto("/teacher/classes")
+  await gotoApp(page, "/teacher/classes")
   await page.getByRole("link", { name: "Mathematics 4A" }).click()
   await page.getByRole("link", { name: "Create assignment" }).click()
   await page
@@ -99,11 +114,11 @@ test("teacher assignment creation, material upload, review and gradebook persist
   await page.getByRole("button", { name: "Next", exact: true }).click()
   await page.getByRole("button", { name: "Save draft", exact: true }).click()
   await expect(page.getByText("Assignment draft saved.")).toBeVisible()
-  await page.goto("/teacher/assignments")
+  await gotoApp(page, "/teacher/assignments")
   await expect(
     page.getByRole("link", { name: "Tested classroom assignment" })
   ).toBeVisible()
-  await page.goto("/teacher/materials")
+  await gotoApp(page, "/teacher/materials")
   await page.getByLabel("Topic", { exact: true }).fill("Algebra review")
   await page.getByLabel("Title", { exact: true }).fill("Worked lesson notes")
   await page.getByLabel("Choose a file or drop it here").setInputFiles({
@@ -117,7 +132,7 @@ test("teacher assignment creation, material upload, review and gradebook persist
   ).toBeVisible()
   await page.getByRole("button", { name: "Save draft", exact: true }).click()
   await expect(page.getByText("Material draft saved.")).toBeVisible()
-  await page.goto("/teacher/submissions")
+  await gotoApp(page, "/teacher/submissions")
   await page.getByLabel(/Mark \(maximum/).fill("40")
   await page
     .getByLabel("Feedback", { exact: true })
@@ -129,7 +144,7 @@ test("teacher assignment creation, material upload, review and gradebook persist
   await confirm(page, "Publish grade and feedback")
   await page.getByRole("button", { name: "Next student" }).click()
   await expect(page.getByText(/2 of/)).toBeVisible()
-  await page.goto("/teacher/gradebook")
+  await gotoApp(page, "/teacher/gradebook")
   await page
     .getByRole("button", { name: "Mark for Learner 003: missing" })
     .click()
@@ -154,7 +169,7 @@ for (const tool of [
     page,
   }) => {
     await preview(page, "teacher")
-    await page.goto(`/teacher/ai?tool=${tool.id}`)
+    await gotoApp(page, `/teacher/ai?tool=${tool.id}`)
     await page
       .getByLabel("Topic", { exact: true })
       .fill("Simultaneous equations")
@@ -165,8 +180,8 @@ for (const tool of [
       .getByRole("button", { name: "Generate draft", exact: true })
       .click()
     await expect(page.getByText(/Job queued/)).toBeVisible()
-    await page.goto("/teacher/dashboard")
-    await page.goto("/teacher/ai")
+    await gotoApp(page, "/teacher/dashboard")
+    await gotoApp(page, "/teacher/ai")
     await expect(page.getByText("Job: completed")).toBeVisible()
     await page
       .getByRole("button", { name: "Review draft", exact: true })
@@ -189,7 +204,7 @@ test("admin search, user detail, confirmed role change, context switch and logou
   page,
 }) => {
   await preview(page, "admin")
-  await page.goto("/admin/users")
+  await gotoApp(page, "/admin/users")
   await page.getByLabel("Search users").fill("Learner 001")
   await page.getByRole("link", { name: "Learner 001" }).click()
   await page.getByRole("checkbox", { name: "teacher", exact: true }).check()
@@ -204,7 +219,7 @@ test("admin search, user detail, confirmed role change, context switch and logou
   await page.getByRole("button", { name: "Profile menu" }).click()
   await page.getByRole("button", { name: "Sign out", exact: true }).click()
   await expect(page).toHaveURL(/sign-in/)
-  await page.goto("/teacher/dashboard")
+  await gotoApp(page, "/teacher/dashboard")
   await expect(page).toHaveURL(/sign-in/)
 })
 test("keyboard command search and mobile drawer restore focus", async ({
@@ -231,13 +246,13 @@ test("keyboard command search and mobile drawer restore focus", async ({
     page.getByRole("button", { name: "Toggle Sidebar" })
   ).toBeFocused()
 })
-test("responsive critical screens and automated accessibility", async ({
-  page,
-}) => {
-  test.setTimeout(300000)
-  const errors: string[] = []
-  page.on("pageerror", (error) => errors.push(error.message))
-  for (const width of [360, 390, 768, 1024, 1280, 1440]) {
+for (const width of [360, 390, 768, 1024, 1280, 1440]) {
+  test(`responsive critical screens and automated accessibility at ${width}px`, async ({
+    page,
+  }) => {
+    test.setTimeout(180000)
+    const errors: string[] = []
+    page.on("pageerror", (error) => errors.push(error.message))
     await page.setViewportSize({ width, height: 900 })
     await preview(page, "teacher")
     for (const route of [
@@ -247,7 +262,7 @@ test("responsive critical screens and automated accessibility", async ({
       "/teacher/gradebook",
       "/teacher/ai",
     ]) {
-      await page.goto(route)
+      await gotoApp(page, route)
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
       if (route === "/teacher/dashboard")
         await page.screenshot({
@@ -270,7 +285,7 @@ test("responsive critical screens and automated accessibility", async ({
       "/student/dashboard",
       "/student/assignments/assignment-1",
     ]) {
-      await page.goto(route)
+      await gotoApp(page, route)
       if (route === "/student/dashboard")
         await page.screenshot({
           path: `docs/frontend/evidence/student-${width}.png`,
@@ -285,7 +300,7 @@ test("responsive critical screens and automated accessibility", async ({
     }
     await preview(page, "admin")
     for (const route of ["/admin/dashboard", "/admin/users"]) {
-      await page.goto(route)
+      await gotoApp(page, route)
       if (route === "/admin/dashboard")
         await page.screenshot({
           path: `docs/frontend/evidence/admin-${width}.png`,
@@ -298,11 +313,13 @@ test("responsive critical screens and automated accessibility", async ({
         `${route} at ${width}px`
       ).toBe(false)
     }
-  }
-  await page.screenshot({ path: "test-results/admin-1440.png", fullPage: true })
-  const results = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
-    .analyze()
-  expect(results.violations).toEqual([])
-  expect(errors).toEqual([])
-})
+    if (width === 1440) {
+      await page.screenshot({ path: "test-results/admin-1440.png", fullPage: true })
+      const results = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+        .analyze()
+      expect(results.violations).toEqual([])
+    }
+    expect(errors).toEqual([])
+  })
+}

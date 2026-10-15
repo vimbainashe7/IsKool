@@ -65,7 +65,8 @@ test("student composition, calendar interaction, keyboard links and six viewport
   }
   await page.setViewportSize({ width: 1440, height: 900 })
   await links.first().focus()
-  await page.keyboard.press("Enter")
+  await expect(links.first()).toBeFocused()
+  await links.first().press("Enter")
   await expect(page).toHaveURL(/student\/classes\//)
   await page.goto("/student/dashboard")
   await page.getByRole("link", { name: "See all", exact: false }).click()
