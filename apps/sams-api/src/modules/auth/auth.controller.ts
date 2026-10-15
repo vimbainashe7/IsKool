@@ -40,4 +40,10 @@ export class AuthController {
       roles: principal.roles
     };
   }
+
+  @Get('context')
+  @UseGuards(ServiceAuthGuard)
+  context(@CurrentPrincipal() principal: AuthPrincipal) {
+    return this.authService.context(principal);
+  }
 }

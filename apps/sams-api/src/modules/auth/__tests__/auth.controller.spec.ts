@@ -20,7 +20,7 @@ function generateKeys() {
 
 describe('SAMS auth API', () => {
   let app: INestApplication;
-  let repository: jest.Mocked<Pick<AuthRepository, 'validatePrincipal'>>;
+  let repository: jest.Mocked<Pick<AuthRepository, 'validatePrincipal' | 'findSessionContext'>>;
 
   async function sign(scope: 'aps' | 'sams'): Promise<string> {
     const service = new JwtTokenService({
@@ -54,7 +54,8 @@ describe('SAMS auth API', () => {
     process.env.JWT_AUDIENCE = 'sams';
 
     repository = {
-      validatePrincipal: jest.fn()
+      validatePrincipal: jest.fn(),
+      findSessionContext: jest.fn()
     };
 
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
@@ -77,6 +78,38 @@ describe('SAMS auth API', () => {
 
   beforeEach(() => {
     repository.validatePrincipal.mockReset();
+    repository.findSessionContext.mockReset();
+  });
+
+  it('returns server-verified identity and school context for a SAMS token', async () => {
+    const token = await sign('sams');
+    const principal = {
+      userId: 'user-1',
+      schoolId: 'school-1',
+      membershipId: 'membership-1',
+      sessionId: 'session-1',
+      scope: 'sams' as const,
+      roles: ['admin'],
+      tokenId: 'token-1'
+    };
+    repository.validatePrincipal.mockResolvedValue(principal);
+    repository.findSessionContext.mockResolvedValue({
+      user: { id: 'user-1', email: 'admin@example.test', displayName: 'Admin User' },
+      school: { id: 'school-1', name: 'School One' },
+      membershipId: 'membership-1',
+      roles: ['admin']
+    });
+
+    await request(app.getHttpServer())
+      .get('/api/v1/auth/context')
+      .set('authorization', `Bearer ${token}`)
+      .expect(200)
+      .expect({
+        user: { id: 'user-1', email: 'admin@example.test', displayName: 'Admin User' },
+        school: { id: 'school-1', name: 'School One' },
+        membershipId: 'membership-1',
+        roles: ['admin']
+      });
   });
 
   it('rejects an APS token at the SAMS HTTP boundary with 401', async () => {

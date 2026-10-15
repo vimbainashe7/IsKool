@@ -23,6 +23,7 @@ describe('AuthService', () => {
       createLoginContinuation: jest.fn(async () => ({ id: 'continuation-1', expiresAt: new Date(Date.now() + 300000) })),
       rotateRefreshToken: jest.fn(),
       revokeSession: jest.fn(),
+      findSessionContext: jest.fn(),
       createSession: jest.fn(async () => ({
         sessionId: 'session-1',
         refreshToken: '',
@@ -197,5 +198,32 @@ describe('AuthService', () => {
 
     await expect(service.logout('session-1')).resolves.toEqual({ status: 'LOGGED_OUT' });
     expect(repository.revokeSession).toHaveBeenCalledWith('session-1', 'logout');
+  });
+
+  it('returns the authoritative school context for an authenticated session', async () => {
+    const { service, repository } = await createHarness();
+    const principal = {
+      userId: 'user-1',
+      schoolId: 'school-1',
+      membershipId: 'membership-1',
+      sessionId: 'session-1',
+      scope: 'sams' as const,
+      roles: ['admin'],
+      tokenId: 'token-1'
+    };
+    repository.findSessionContext.mockResolvedValue({
+      user: { id: 'user-1', email: 'admin@example.test', displayName: 'Admin User' },
+      school: { id: 'school-1', name: 'School One' },
+      membershipId: 'membership-1',
+      roles: ['admin']
+    });
+
+    await expect(service.context(principal)).resolves.toEqual({
+      user: { id: 'user-1', email: 'admin@example.test', displayName: 'Admin User' },
+      school: { id: 'school-1', name: 'School One' },
+      membershipId: 'membership-1',
+      roles: ['admin']
+    });
+    expect(repository.findSessionContext).toHaveBeenCalledWith(principal);
   });
 });

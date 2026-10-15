@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AuthPrincipal, ServiceScope } from '@aps-sams/auth';
 import { AuthPrismaService } from './auth-prisma.service';
-import { IssuedAuthSession, LoginCandidate, RotatedRefreshSession } from './auth.types';
+import { AuthSessionContext, IssuedAuthSession, LoginCandidate, RotatedRefreshSession } from './auth.types';
 
 @Injectable()
 export class AuthRepository {
@@ -138,6 +138,51 @@ export class AuthRepository {
 
     return {
       ...input,
+      roles: session.membership.membershipRoles.map((membershipRole) => membershipRole.role.key).sort()
+    };
+  }
+
+  async findSessionContext(input: AuthPrincipal): Promise<AuthSessionContext | null> {
+    const session = await this.prisma.authSession.findFirst({
+      where: {
+        id: input.sessionId,
+        userId: input.userId,
+        schoolId: input.schoolId,
+        membershipId: input.membershipId,
+        revokedAt: null,
+        expiresAt: { gt: new Date() }
+      },
+      include: {
+        user: true,
+        membership: {
+          include: {
+            school: true,
+            membershipRoles: { include: { role: true } }
+          }
+        }
+      }
+    });
+
+    if (
+      !session ||
+      session.user.status !== 'active' ||
+      session.membership.status !== 'active' ||
+      session.membership.school.status !== 'active'
+    ) {
+      return null;
+    }
+
+    return {
+      user: {
+        id: session.user.id,
+        email: session.user.email,
+        displayName: session.user.displayName
+      },
+      school: {
+        id: session.membership.school.id,
+        name: session.membership.school.name
+      },
+      membershipId: session.membership.id,
       roles: session.membership.membershipRoles.map((membershipRole) => membershipRole.role.key).sort()
     };
   }

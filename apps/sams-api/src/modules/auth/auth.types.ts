@@ -70,3 +70,17 @@ export interface SchoolSelectionResponse {
     readonly allowedScopes: readonly ServiceScope[];
   }[];
 }
+
+export interface AuthSessionContext {
+  readonly user: {
+    readonly id: string;
+    readonly email: string;
+    readonly displayName: string;
+  };
+  readonly school: {
+    readonly id: string;
+    readonly name: string;
+  };
+  readonly membershipId: string;
+  readonly roles: readonly string[];
+}

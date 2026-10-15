@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import {
+  AuthPrincipal,
   JwtTokenService,
   PasswordService,
   RefreshTokenService,
@@ -9,7 +10,7 @@ import {
 import { authConfig } from '../../config/auth.config';
 import { AuthenticationRequiredError, BusinessRuleError } from '../../common/errors/application-error';
 import { AuthRepository } from './auth.repository';
-import { ActiveMembership, LoginResponse, RefreshResponse, SchoolSelectionResponse } from './auth.types';
+import { ActiveMembership, AuthSessionContext, LoginResponse, RefreshResponse, SchoolSelectionResponse } from './auth.types';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { ServiceAccessPolicy } from './service-access.policy';
@@ -153,6 +154,14 @@ export class AuthService {
   async logout(sessionId: string): Promise<{ status: 'LOGGED_OUT' }> {
     await this.repository.revokeSession(sessionId, 'logout');
     return { status: 'LOGGED_OUT' };
+  }
+
+  async context(principal: AuthPrincipal): Promise<AuthSessionContext> {
+    const context = await this.repository.findSessionContext(principal);
+    if (!context) {
+      throw new AuthenticationRequiredError();
+    }
+    return context;
   }
 
   private resolveMembership(memberships: readonly ActiveMembership[], schoolId?: string): ActiveMembership {
