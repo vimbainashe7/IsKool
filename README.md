@@ -31,7 +31,7 @@ The active topology decision is [ADR-0010](docs/adr/0010-single-repository-monor
 - Node.js 22 LTS
 - npm
 - Git
-- Docker Desktop or another Docker runtime
+- Docker Desktop or another Docker runtime when testing Redis queues, MinIO, or the local Supabase stack
 - Supabase CLI via `npm ci`
 
 ## Quick Start: Local Infrastructure
@@ -59,6 +59,23 @@ This workflow is for local development only. Supabase provides the local Postgre
 7. Run SAMS on port `3002`, then APS on port `3001`.
 
 Supabase Auth is not part of the active authentication architecture. The APIs use Supabase local tooling for PostgreSQL and migrations only.
+
+## Quick Start: Hosted Development Without Docker
+
+The APIs also support an approved non-production Supabase database over its IPv4 session pooler. Set `REDIS_ENABLED=false` in both ignored service `.env` files, configure the three least-privilege database logins described in [Local Development](docs/architecture/LOCAL_DEVELOPMENT.md), then run:
+
+```powershell
+npm run acceptance:doctor
+npm run dev:backend
+```
+
+From a second Node 22 terminal:
+
+```powershell
+npm run acceptance:m2
+```
+
+This mode covers live database readiness, development seeding, authentication, refresh rotation, logout, authorization, tenant isolation, and audited writes without Docker. Queue workers remain disabled until Redis is enabled.
 
 ### Destructive Reset
 
@@ -108,7 +125,7 @@ M2 manual acceptance for authentication, authorization, and audit lives in
 [docs/acceptance/M2-IDENTITY-AUTHORIZATION.md](docs/acceptance/M2-IDENTITY-AUTHORIZATION.md).
 Use Node 22.x; `npm ci` now fails early on unsupported Node versions instead of allowing later TypeScript/Prisma failures.
 
-`npm run db:rls:test` and `npm run db:drift:check` require a running Supabase local PostgreSQL database rebuilt from committed migrations. In CI this is handled by the `database-rls` job in the IsKool Architecture Gate.
+`npm run db:rls:test` requires a running Supabase local PostgreSQL database rebuilt from committed migrations. `npm run db:drift:check` accepts either that local database or an explicit `DATABASE_URL`, including a linked development session-pooler URL. In CI the local database is handled by the `database-rls` job in the IsKool Architecture Gate.
 
 ## CI Architecture Gate
 
