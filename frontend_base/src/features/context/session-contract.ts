@@ -18,7 +18,7 @@ export type IsKoolContext = {
   activeRole: RoleKey
 }
 
-export type SessionContractStatus = "supabase" | "unconfigured"
+export type SessionContractStatus = "iskool" | "supabase" | "unconfigured"
 
 export type SessionContract = {
   status: SessionContractStatus

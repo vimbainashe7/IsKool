@@ -1,7 +1,13 @@
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
+import { loadEnvFile } from './acceptance/helpers/env.mjs';
 
-const databaseUrl = process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+loadEnvFile('.env');
+
+const databaseUrl =
+  process.env.DATABASE_URL ??
+  process.env.MIGRATION_DATABASE_URL ??
+  'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
 const schemaPath = process.env.PRISMA_SCHEMA_PATH ?? 'database/prisma/schema.prisma';
 
 const result = spawnSync(

@@ -77,6 +77,34 @@ npm run acceptance:m2
 
 This mode covers live database readiness, development seeding, authentication, refresh rotation, logout, authorization, tenant isolation, and audited writes without Docker. Queue workers remain disabled until Redis is enabled.
 
+To test the browser application against those APIs, use Node 24 in a third terminal and create the ignored `frontend_base/.env.local` file:
+
+```dotenv
+ISKOOL_SAMS_API_URL=http://127.0.0.1:3002/api/v1
+ISKOOL_APS_API_URL=http://127.0.0.1:3001/api/v1
+NEXT_PUBLIC_ISKOOL_DEMO=false
+ISKOOL_ENABLE_DEMO=false
+```
+
+Then start the frontend:
+
+```powershell
+cd frontend_base
+pnpm install --frozen-lockfile
+pnpm dev --port 3000
+```
+
+Open `http://localhost:3000/sign-in`. The development seed creates `student.alpha@example.test`, `teacher.alpha@example.test`, and `admin.alpha@example.test`; use the ignored `DEV_SEED_PASSWORD` configured for the APIs. Authentication, server-verified role routing, reload persistence, refresh rotation, and logout use live database sessions. Academic dashboard projections remain empty until their backend resources are implemented, and the UI reports that state instead of substituting demo records.
+
+The opt-in browser acceptance test uses the same live services:
+
+```powershell
+$env:ISKOOL_LIVE_AUTH="true"
+$env:ISKOOL_TEST_PASSWORD="<the configured DEV_SEED_PASSWORD>"
+$env:ISKOOL_E2E_PORT="3000"
+pnpm exec playwright test tests/e2e/live-auth.spec.ts
+```
+
 ### Destructive Reset
 
 `npm run supabase:db:reset` runs `supabase db reset`. This is destructive and must be invoked only as an explicit developer action. Do not run database reset during application startup or normal test commands.

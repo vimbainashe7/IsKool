@@ -48,6 +48,24 @@ async function main() {
   expectStatus('APS token', apsMe, 200);
   pass('APS token');
 
+  const samsContext = await requestJson('GET', `${samsBaseUrl}/auth/context`, {
+    token: sessionA.accessTokens.sams
+  });
+  expectStatus('SAMS context', samsContext, 200);
+  if (samsContext.body.user?.email !== 'admin.alpha@example.test' || !samsContext.body.school?.id) {
+    throw new Error('SAMS context did not return the verified user and school.');
+  }
+  pass('SAMS context');
+
+  const apsContext = await requestJson('GET', `${apsBaseUrl}/auth/context`, {
+    token: sessionA.accessTokens.aps
+  });
+  expectStatus('APS context', apsContext, 200);
+  if (apsContext.body.user?.id !== samsContext.body.user.id || apsContext.body.school?.id !== samsContext.body.school.id) {
+    throw new Error('APS and SAMS context responses do not identify the same session.');
+  }
+  pass('APS context');
+
   expectStatus(
     'APS token rejection by SAMS',
     await requestJson('GET', `${samsBaseUrl}/auth/me`, { token: sessionA.accessTokens.aps }),
@@ -92,6 +110,24 @@ async function main() {
     401
   );
   pass('post-logout refresh rejection');
+
+  const studentSession = await login('student.alpha@example.test');
+  if (!studentSession.accessTokens?.aps || studentSession.accessTokens?.sams) {
+    throw new Error('student login did not return an APS-only token set.');
+  }
+  expectStatus(
+    'APS-only logout',
+    await requestJson('POST', `${apsBaseUrl}/auth/logout`, { token: studentSession.accessTokens.aps }),
+    200
+  );
+  expectStatus(
+    'APS-only post-logout refresh rejection',
+    await requestJson('POST', `${samsBaseUrl}/auth/refresh`, {
+      body: { refreshToken: studentSession.refreshToken }
+    }),
+    401
+  );
+  pass('APS-only logout');
 
   const selection = await requestJson('POST', `${samsBaseUrl}/auth/login`, {
     body: { email: 'multi.school@example.test', password }
