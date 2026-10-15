@@ -36,8 +36,27 @@ describe('env validation', () => {
     expect(result.error).toBeUndefined();
   });
 
+  it('accepts Redis-free local config without connection settings', () => {
+    const redisFreeEnv: Partial<typeof validEnv> = { ...validEnv };
+    delete redisFreeEnv.REDIS_HOST;
+    delete redisFreeEnv.REDIS_PORT;
+    delete redisFreeEnv.REDIS_PASSWORD;
+    const result = envValidationSchema.validate({ ...redisFreeEnv, REDIS_ENABLED: false });
+    expect(result.error).toBeUndefined();
+  });
+
   it('fails invalid production config', () => {
     const result = envValidationSchema.validate({ ...validEnv, NODE_ENV: 'production' });
+    expect(result.error).toBeDefined();
+  });
+
+  it('rejects Redis-free production config', () => {
+    const result = envValidationSchema.validate({
+      ...validEnv,
+      NODE_ENV: 'production',
+      REDIS_ENABLED: false,
+      REDIS_PASSWORD: 'strong-production-secret'
+    });
     expect(result.error).toBeDefined();
   });
 });

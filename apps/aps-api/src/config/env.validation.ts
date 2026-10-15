@@ -6,8 +6,17 @@ export const envValidationSchema = Joi.object({
   SERVICE_NAME: Joi.string().min(2).required(),
   PORT: Joi.number().port().required(),
   DATABASE_URL: Joi.string().uri({ scheme: ['postgresql', 'postgres'] }).required(),
-  REDIS_HOST: Joi.string().hostname().required(),
-  REDIS_PORT: Joi.number().port().required(),
+  REDIS_ENABLED: Joi.boolean().truthy('true').falsy('false').default(true),
+  REDIS_HOST: Joi.when('REDIS_ENABLED', {
+    is: true,
+    then: Joi.string().hostname().required(),
+    otherwise: Joi.string().hostname().optional()
+  }),
+  REDIS_PORT: Joi.when('REDIS_ENABLED', {
+    is: true,
+    then: Joi.number().port().required(),
+    otherwise: Joi.number().port().optional()
+  }),
   REDIS_PASSWORD: Joi.string().allow('').optional(),
   JWT_ISSUER: Joi.string().required(),
   JWT_AUDIENCE: Joi.string().required(),
@@ -31,7 +40,8 @@ export const envValidationSchema = Joi.object({
   if (value.NODE_ENV === 'production') {
     const weakStorageSecret = value.STORAGE_SECRET_KEY === 'minioadmin123';
     const emptyRedisPassword = value.REDIS_PASSWORD === '';
-    if (weakStorageSecret || emptyRedisPassword) {
+    const redisDisabled = value.REDIS_ENABLED === false;
+    if (weakStorageSecret || emptyRedisPassword || redisDisabled) {
       return helpers.error('any.invalid', {
         message: 'Production configuration must not use local development secrets.'
       });
