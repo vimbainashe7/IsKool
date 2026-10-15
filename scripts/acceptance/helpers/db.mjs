@@ -4,8 +4,7 @@ export function databaseUrl() {
   return process.env.ACCEPTANCE_DATABASE_URL || process.env.DATABASE_URL || process.env.AUTH_DATABASE_URL;
 }
 
-export async function createPrisma() {
-  const url = databaseUrl();
+export async function createPrisma(url = databaseUrl()) {
   if (!url) {
     throw new Error('DATABASE_URL or ACCEPTANCE_DATABASE_URL is required.');
   }

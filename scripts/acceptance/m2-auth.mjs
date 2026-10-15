@@ -1,5 +1,8 @@
 import { requestJson, expectStatus, pass } from './helpers/http.mjs';
 import { assertHealthyApis, defaultApsBaseUrl, defaultSamsBaseUrl } from './helpers/preflight.mjs';
+import { loadServiceEnv } from './helpers/env.mjs';
+
+loadServiceEnv('sams-api');
 
 const samsBaseUrl = defaultSamsBaseUrl;
 const apsBaseUrl = defaultApsBaseUrl;

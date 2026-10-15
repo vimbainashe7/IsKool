@@ -4,11 +4,12 @@ import { loadServiceEnv } from './helpers/env.mjs';
 
 loadServiceEnv('sams-api');
 
-const prisma = await createPrisma();
+const prisma = await createPrisma(process.env.DATABASE_URL);
+const authPrisma = await createPrisma(process.env.AUTH_DATABASE_URL);
 const requestId = `m2-audit-${randomUUID()}`;
 
 try {
-  const admin = await prisma.user.findUnique({
+  const admin = await authPrisma.user.findUnique({
     where: { emailNormalized: 'admin.alpha@example.test' },
     include: {
       memberships: {
@@ -78,5 +79,5 @@ try {
     )
   );
 } finally {
-  await prisma.$disconnect();
+  await Promise.all([prisma.$disconnect(), authPrisma.$disconnect()]);
 }

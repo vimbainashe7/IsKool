@@ -49,7 +49,7 @@ export class HealthService {
     return { status, dependencies, timestamp: new Date().toISOString() };
   }
 
-  private async withTimeout<T>(operation: Promise<T>, timeoutMs = 500): Promise<T> {
+  private async withTimeout<T>(operation: Promise<T>, timeoutMs = 3000): Promise<T> {
     let timeout: NodeJS.Timeout | undefined;
     try {
       return await Promise.race([

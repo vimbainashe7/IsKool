@@ -3,7 +3,7 @@ import { loadServiceEnv } from './helpers/env.mjs';
 
 loadServiceEnv('sams-api');
 
-const prisma = await createPrisma();
+const prisma = await createPrisma(process.env.MIGRATION_DATABASE_URL ?? process.env.DATABASE_URL);
 try {
   await prisma.$queryRaw`SELECT 1`;
   console.log('PASS database connection');

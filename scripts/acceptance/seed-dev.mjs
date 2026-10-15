@@ -4,6 +4,7 @@ import { loadServiceEnv, requireEnv } from './helpers/env.mjs';
 
 loadServiceEnv('sams-api');
 assertDevSeedAllowed();
+process.env.ACCEPTANCE_DATABASE_URL = requireEnv('MIGRATION_DATABASE_URL');
 
 const password = requireEnv('DEV_SEED_PASSWORD');
 if (password.length < 8) {
