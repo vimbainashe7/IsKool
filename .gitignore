@@ -21,6 +21,9 @@ coverage/
 *.log
 tmp/
 uploads/
+bootstrap/nest-service-template/prisma/generated/
+**/playwright-report/
+**/test-results/
 
 # editor/os
 .DS_Store
@@ -29,5 +32,5 @@ Thumbs.db
 .vscode/
 
 # Existing standalone repository; keep it separate from this root repo.
-aps-api/
-sams-api/
+/aps-api/
+/sams-api/

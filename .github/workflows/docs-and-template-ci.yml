@@ -1,0 +1,39 @@
+name: bootstrap-template-ci
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/docs-and-template-ci.yml"
+      - "bootstrap/nest-service-template/**"
+      - "package.json"
+      - "package-lock.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/docs-and-template-ci.yml"
+      - "bootstrap/nest-service-template/**"
+      - "package.json"
+      - "package-lock.json"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  template:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - run: npm --prefix bootstrap/nest-service-template run lint
+      - run: npm --prefix bootstrap/nest-service-template run typecheck
+      - run: npm --prefix bootstrap/nest-service-template test
+      - run: npm --prefix bootstrap/nest-service-template run build
+      - run: npm --prefix bootstrap/nest-service-template run prisma:validate
+      - run: docker compose -f bootstrap/nest-service-template/docker-compose.yml config

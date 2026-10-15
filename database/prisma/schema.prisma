@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model School {
+  id          String       @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
+  name        String
+  status      String       @default("active")
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  memberships Membership[]
+  authSessions AuthSession[]
+  auditEvents  AuditEvent[]
+
+  @@map("schools")
+}
+
+model User {
+  id              String           @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
+  email           String
+  emailNormalized String           @map("email_normalized")
+  displayName     String           @map("display_name")
+  status          String           @default("active")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  memberships     Membership[]
+  credential      UserCredential?
+  authSessions    AuthSession[]
+  continuations   AuthLoginContinuation[]
+  auditEvents     AuditEvent[]
+
+  @@unique([email], map: "users_email_unique")
+  @@unique([emailNormalized], map: "users_email_normalized_unique")
+  @@map("users")
+}
+
+model Membership {
+  id              String           @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
+  userId          String           @map("user_id") @db.Uuid
+  schoolId        String           @map("school_id") @db.Uuid
+  status          String           @default("active")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "memberships_user_id_fkey")
+  school          School           @relation(fields: [schoolId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "memberships_school_id_fkey")
+  membershipRoles MembershipRole[]
+  authSessions    AuthSession[]
+  auditEvents     AuditEvent[]
+
+  @@unique([userId, schoolId], map: "memberships_user_school_unique")
+  @@index([userId], map: "memberships_user_id_idx")
+  @@index([schoolId], map: "memberships_school_id_idx")
+  @@index([userId, schoolId], map: "memberships_user_school_idx")
+  @@map("memberships")
+}
+
+model Role {
+  id              String           @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
+  key             String
+  name            String
+  description     String?
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  membershipRoles MembershipRole[]
+
+  @@unique([key], map: "roles_key_unique")
+  @@map("roles")
+}
+
+model MembershipRole {
+  membershipId String     @map("membership_id") @db.Uuid
+  roleId       String     @map("role_id") @db.Uuid
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "membership_roles_membership_id_fkey")
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "membership_roles_role_id_fkey")
+
+  @@id([membershipId, roleId])
+  @@index([membershipId], map: "membership_roles_membership_id_idx")
+  @@index([roleId], map: "membership_roles_role_id_idx")
+  @@map("membership_roles")
+}
+
+model UserCredential {
+  userId            String    @id @map("user_id") @db.Uuid
+  passwordHash      String    @map("password_hash")
+  passwordChangedAt DateTime  @default(now()) @map("password_changed_at") @db.Timestamptz(6)
+  disabledAt        DateTime? @map("disabled_at") @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_credentials_user_id_fkey")
+
+  @@map("user_credentials")
+}
+
+model AuthSession {
+  id              String             @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
+  userId          String             @map("user_id") @db.Uuid
+  schoolId        String             @map("school_id") @db.Uuid
+  membershipId    String             @map("membership_id") @db.Uuid
+  refreshFamilyId String             @default(dbgenerated("extensions.gen_random_uuid()")) @map("refresh_family_id") @db.Uuid
+  allowedScopes   String[]           @map("allowed_scopes")
+  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastUsedAt      DateTime?          @map("last_used_at") @db.Timestamptz(6)
+  expiresAt       DateTime           @map("expires_at") @db.Timestamptz(6)
+  revokedAt       DateTime?          @map("revoked_at") @db.Timestamptz(6)
+  revokeReason    String?            @map("revoke_reason")
+  reuseDetectedAt DateTime?          @map("reuse_detected_at") @db.Timestamptz(6)
+  updatedAt       DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "auth_sessions_user_id_fkey")
+  school          School             @relation(fields: [schoolId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "auth_sessions_school_id_fkey")
+  membership      Membership         @relation(fields: [membershipId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "auth_sessions_membership_id_fkey")
+  refreshTokens   AuthRefreshToken[]
+
+  @@index([userId], map: "auth_sessions_user_id_idx")
+  @@index([membershipId], map: "auth_sessions_membership_id_idx")
+  @@index([userId, revokedAt, expiresAt], map: "auth_sessions_active_idx")
+  @@map("auth_sessions")
+}
+
+model AuthRefreshToken {
+  id              String              @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
+  sessionId       String              @map("session_id") @db.Uuid
+  tokenDigest     String              @map("token_digest")
+  createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt       DateTime            @map("expires_at") @db.Timestamptz(6)
+  consumedAt      DateTime?           @map("consumed_at") @db.Timestamptz(6)
+  replacedById    String?             @map("replaced_by_id") @db.Uuid
+  revokedAt       DateTime?           @map("revoked_at") @db.Timestamptz(6)
+  reuseDetectedAt DateTime?           @map("reuse_detected_at") @db.Timestamptz(6)
+  updatedAt       DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  session         AuthSession         @relation(fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "auth_refresh_tokens_session_id_fkey")
+  replacedBy      AuthRefreshToken?   @relation("RefreshTokenReplacement", fields: [replacedById], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "auth_refresh_tokens_replaced_by_id_fkey")
+  replacements    AuthRefreshToken[]  @relation("RefreshTokenReplacement")
+
+  @@unique([tokenDigest], map: "auth_refresh_tokens_digest_unique")
+  @@index([sessionId], map: "auth_refresh_tokens_session_id_idx")
+  @@map("auth_refresh_tokens")
+}
+
+model AuthLoginContinuation {
+  id             String    @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  verifierDigest String    @map("verifier_digest")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt      DateTime  @map("expires_at") @db.Timestamptz(6)
+  consumedAt     DateTime? @map("consumed_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "auth_login_continuations_user_id_fkey")
+
+  @@unique([verifierDigest], map: "auth_login_continuations_digest_unique")
+  @@index([userId], map: "auth_login_continuations_user_id_idx")
+  @@map("auth_login_continuations")
+}
+
+model AuditEvent {
+  id                String     @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
+  actorUserId       String     @map("actor_user_id") @db.Uuid
+  actorMembershipId String     @map("actor_membership_id") @db.Uuid
+  schoolId          String     @map("school_id") @db.Uuid
+  action            String
+  entityType        String     @map("entity_type")
+  entityId          String     @map("entity_id")
+  beforeValue       Json?      @map("before_value")
+  afterValue        Json?      @map("after_value")
+  requestId         String     @map("request_id")
+  reason            String?
+  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  actor             User       @relation(fields: [actorUserId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "audit_events_actor_user_id_fkey")
+  actorMembership   Membership @relation(fields: [actorMembershipId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "audit_events_actor_membership_id_fkey")
+  school            School     @relation(fields: [schoolId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "audit_events_school_id_fkey")
+
+  @@index([schoolId, createdAt(sort: Desc)], map: "audit_events_school_created_at_idx")
+  @@index([actorUserId, createdAt(sort: Desc)], map: "audit_events_actor_created_at_idx")
+  @@index([entityType, entityId], map: "audit_events_entity_idx")
+  @@index([requestId], map: "audit_events_request_id_idx")
+  @@map("audit_events")
+}
