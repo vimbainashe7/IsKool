@@ -1,12 +1,13 @@
 import { spawnSync } from 'node:child_process';
+import { resolve } from 'node:path';
 
 const databaseUrl = process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
 const schemaPath = process.env.PRISMA_SCHEMA_PATH ?? 'database/prisma/schema.prisma';
 
 const result = spawnSync(
-  'npx',
+  process.execPath,
   [
-    'prisma',
+    resolve('node_modules/prisma/build/index.js'),
     'migrate',
     'diff',
     '--from-url',
@@ -16,8 +17,7 @@ const result = spawnSync(
     '--exit-code'
   ],
   {
-    encoding: 'utf8',
-    shell: process.platform === 'win32'
+    encoding: 'utf8'
   }
 );
 
