@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { AuthPrincipal } from '@aps-sams/auth';
 import { CurrentPrincipal } from './current-principal.decorator';
 import { AuthenticationRequiredError } from '../../common/errors/application-error';
@@ -30,5 +30,13 @@ export class AuthController {
       throw new AuthenticationRequiredError();
     }
     return context;
+  }
+
+  @Post('logout')
+  @HttpCode(200)
+  @UseGuards(ServiceAuthGuard)
+  async logout(@CurrentPrincipal() principal: AuthPrincipal) {
+    await this.repository.revokeSession(principal.sessionId, 'logout');
+    return { status: 'LOGGED_OUT' as const };
   }
 }

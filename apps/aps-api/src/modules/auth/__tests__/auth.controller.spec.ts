@@ -20,7 +20,7 @@ function generateKeys() {
 
 describe('APS auth API', () => {
   let app: INestApplication;
-  let repository: jest.Mocked<Pick<AuthRepository, 'validatePrincipal' | 'findSessionContext'>>;
+  let repository: jest.Mocked<Pick<AuthRepository, 'validatePrincipal' | 'findSessionContext' | 'revokeSession'>>;
 
   async function sign(scope: 'aps' | 'sams'): Promise<string> {
     const service = new JwtTokenService({
@@ -55,7 +55,8 @@ describe('APS auth API', () => {
 
     repository = {
       validatePrincipal: jest.fn(),
-      findSessionContext: jest.fn()
+      findSessionContext: jest.fn(),
+      revokeSession: jest.fn()
     };
 
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
@@ -79,6 +80,7 @@ describe('APS auth API', () => {
   beforeEach(() => {
     repository.validatePrincipal.mockReset();
     repository.findSessionContext.mockReset();
+    repository.revokeSession.mockReset();
   });
 
   it('returns server-verified identity and school context for an APS token', async () => {
@@ -104,6 +106,23 @@ describe('APS auth API', () => {
         membershipId: 'membership-1',
         roles: ['teacher']
       });
+  });
+
+  it('revokes an APS-only session during logout', async () => {
+    const token = await sign('aps');
+    repository.validatePrincipal.mockImplementation(async (principal: AuthPrincipal) => ({
+      ...principal,
+      roles: ['student']
+    }));
+    repository.revokeSession.mockResolvedValue();
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/logout')
+      .set('authorization', `Bearer ${token}`)
+      .expect(200)
+      .expect({ status: 'LOGGED_OUT' });
+
+    expect(repository.revokeSession).toHaveBeenCalledWith('session-1', 'logout');
   });
 
   it('returns the normalized APS principal for a valid APS token', async () => {

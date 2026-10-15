@@ -91,4 +91,11 @@ export class AuthRepository {
       roles: session.membership.membershipRoles.map((membershipRole) => membershipRole.role.key).sort()
     };
   }
+
+  async revokeSession(sessionId: string, reason: string): Promise<void> {
+    await this.prisma.authSession.update({
+      where: { id: sessionId },
+      data: { revokedAt: new Date(), revokeReason: reason }
+    });
+  }
 }
