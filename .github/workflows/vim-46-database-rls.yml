@@ -1,0 +1,211 @@
+name: IsKool Architecture Gate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  workspace:
+    name: workspace
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+
+      - name: Validate Prisma mapping
+        run: npm run prisma:validate
+
+      - name: Verify generated state is not dirty
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- package-lock.json package.json database/prisma/schema.prisma
+
+  aps:
+    name: aps
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+      - run: npm run prisma:generate
+      - run: npm run build:packages
+      - run: npm run lint:aps
+      - run: npm run typecheck:aps
+      - run: npm run test:aps
+      - run: npm run build:aps
+
+  sams:
+    name: sams
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+      - run: npm run prisma:generate
+      - run: npm run build:packages
+      - run: npm run lint:sams
+      - run: npm run typecheck:sams
+      - run: npm run test:sams
+      - run: npm run build:sams
+
+  database-rls:
+    name: database-rls
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+      - run: npm run prisma:generate
+      - run: npm run prisma:validate
+
+      - name: Start Supabase PostgreSQL
+        run: npm run supabase:start
+
+      - name: Apply Supabase migrations from zero
+        run: npm run supabase:db:reset -- --debug
+
+      - name: Run RLS foundation integration tests
+        run: npm run db:rls:test
+
+      - name: Run auth foundation integration tests
+        run: npm run db:auth:test
+
+      - name: Check Prisma mapped schema drift
+        run: npm run db:drift:check
+
+      - name: Stop Supabase
+        if: always()
+        run: npx supabase stop --no-backup
+
+  runtime-smoke:
+    name: runtime-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+
+      - name: Start Supabase local PostgreSQL
+        run: npm run supabase:start
+
+      - name: Verify Supabase status and PostgreSQL reachability
+        run: |
+          set -euo pipefail
+          npm run supabase:status
+          DB_CONTAINER="$(docker ps --format '{{.Names}}' | grep '^supabase_db_' | head -n 1)"
+          test -n "$DB_CONTAINER"
+          docker exec "$DB_CONTAINER" pg_isready -U postgres
+
+      - name: Start Redis and MinIO
+        run: npm run infra:up
+
+      - name: Verify Redis and MinIO health
+        run: |
+          set -euo pipefail
+          docker compose --env-file .env.example -f infra/docker-compose.yml ps
+          docker compose --env-file .env.example -f infra/docker-compose.yml exec -T redis redis-cli ping | grep -x PONG
+          for attempt in {1..30}; do
+            if curl -fsS "http://127.0.0.1:${MINIO_API_PORT:-9000}/minio/health/live"; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose --env-file .env.example -f infra/docker-compose.yml logs minio
+          exit 1
+
+      - name: Generate local service env files
+        run: npm run dev:keys
+
+      - name: Generate Prisma client for acceptance scripts
+        run: npm run prisma:generate
+
+      - name: Seed M2 development acceptance data
+        run: npm run db:seed:dev
+        env:
+          NODE_ENV: development
+          ISKOOL_ENVIRONMENT: development
+          ALLOW_DEV_SEED: "true"
+          DEV_SEED_PASSWORD: ci-acceptance-password-123
+
+      - name: Build APIs for runtime smoke
+        run: |
+          set -euo pipefail
+          npm run build:packages
+          npm run build:sams
+          npm run build:aps
+
+      - name: Start APIs and run M2 smoke
+        run: |
+          set -euo pipefail
+          npm --workspace apps/sams-api start &
+          SAMS_PID=$!
+          npm --workspace apps/aps-api start &
+          APS_PID=$!
+          trap 'kill "$SAMS_PID" "$APS_PID" || true' EXIT
+
+          for attempt in {1..60}; do
+            if curl -fsS http://127.0.0.1:3002/api/v1/health/live && curl -fsS http://127.0.0.1:3001/api/v1/health/live; then
+              break
+            fi
+            sleep 2
+          done
+
+          curl -fsS http://127.0.0.1:3002/api/v1/health/live
+          curl -fsS http://127.0.0.1:3001/api/v1/health/live
+          npm run smoke:auth
+          npm run smoke:authorization
+          npm run smoke:audit
+        env:
+          DEV_SEED_PASSWORD: ci-acceptance-password-123
+
+      - name: Stop local runtime
+        if: always()
+        run: |
+          docker compose --env-file .env.example -f infra/docker-compose.yml down --volumes --remove-orphans
+          npx supabase stop --no-backup

@@ -1,0 +1,63 @@
+{
+  "name": "aps-sams",
+  "version": "0.1.0",
+  "private": true,
+  "description": "APS and SAMS monorepo",
+  "engines": {
+    "node": ">=22 <23",
+    "npm": ">=10"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "preinstall": "node scripts/check-node-version.mjs",
+    "doctor": "node scripts/acceptance/doctor.mjs",
+    "acceptance:doctor": "node scripts/acceptance/doctor.mjs",
+    "acceptance:m2": "node scripts/acceptance/doctor.mjs --require-apis && npm run db:seed:dev && npm run smoke:auth && npm run smoke:authorization && npm run smoke:audit",
+    "dev:aps": "npm --workspace apps/aps-api run start:dev",
+    "dev:sams": "npm --workspace apps/sams-api run start:dev",
+    "dev:backend": "node scripts/acceptance/dev-backend.mjs",
+    "dev:keys": "node scripts/acceptance/generate-dev-keys.mjs",
+    "lint": "npm run lint:aps && npm run lint:sams",
+    "lint:aps": "npm --workspace apps/aps-api run lint",
+    "lint:sams": "npm --workspace apps/sams-api run lint",
+    "typecheck": "npm run typecheck:packages && npm run typecheck:aps && npm run typecheck:sams",
+    "typecheck:packages": "npm --workspace packages/auth run typecheck",
+    "typecheck:aps": "npm --workspace apps/aps-api run typecheck",
+    "typecheck:sams": "npm --workspace apps/sams-api run typecheck",
+    "test": "npm run test:packages && npm run test:aps && npm run test:sams",
+    "test:packages": "npm --workspace packages/auth test",
+    "test:aps": "npm --workspace apps/aps-api test",
+    "test:sams": "npm --workspace apps/sams-api test",
+    "verify": "npm run prisma:generate && npm run prisma:validate && npm run verify:packages && npm run verify:aps && npm run verify:sams",
+    "verify:packages": "npm run typecheck:packages && npm run test:packages && npm run build:packages",
+    "verify:aps": "npm run lint:aps && npm run typecheck:aps && npm run test:aps && npm run build:aps",
+    "verify:sams": "npm run lint:sams && npm run typecheck:sams && npm run test:sams && npm run build:sams",
+    "build": "npm run build:packages && npm run build:aps && npm run build:sams",
+    "build:packages": "npm --workspace packages/auth run build",
+    "build:aps": "npm --workspace apps/aps-api run build",
+    "build:sams": "npm --workspace apps/sams-api run build",
+    "infra:up": "docker compose --env-file .env.example -f infra/docker-compose.yml up -d redis minio",
+    "infra:ps": "docker compose --env-file .env.example -f infra/docker-compose.yml ps",
+    "infra:config": "docker compose --env-file .env.example -f infra/docker-compose.yml config",
+    "prisma:generate": "node scripts/prisma-with-local-database-url.cjs generate --schema database/prisma/schema.prisma",
+    "prisma:validate": "node scripts/prisma-with-local-database-url.cjs validate --schema database/prisma/schema.prisma",
+    "supabase:start": "supabase start",
+    "supabase:status": "supabase status",
+    "supabase:db:reset": "supabase db reset",
+    "db:inspect:safe": "node scripts/acceptance/db-inspect.mjs",
+    "db:provision:remote-dev": "node scripts/acceptance/provision-remote-dev-logins.mjs",
+    "db:seed:dev": "node scripts/acceptance/seed-dev.mjs",
+    "smoke:auth": "node scripts/acceptance/m2-auth.mjs",
+    "smoke:authorization": "npm run build:packages && node scripts/acceptance/m2-security.mjs",
+    "smoke:audit": "node scripts/acceptance/m2-audit.mjs",
+    "db:rls:test": "node scripts/test-rls-foundation.mjs",
+    "db:auth:test": "node scripts/test-auth-foundation.mjs",
+    "db:drift:check": "node scripts/check-prisma-drift.mjs"
+  },
+  "devDependencies": {
+    "supabase": "^2.119.0"
+  }
+}
