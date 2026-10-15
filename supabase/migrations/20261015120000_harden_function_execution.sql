@@ -1,0 +1,10 @@
+-- Pin helper-function resolution and keep the automatic RLS event trigger
+-- unavailable as a callable RPC.
+
+ALTER FUNCTION iskool.setting_uuid(text) SET search_path = pg_catalog;
+ALTER FUNCTION iskool.current_user_id() SET search_path = pg_catalog;
+ALTER FUNCTION iskool.current_school_id() SET search_path = pg_catalog;
+ALTER FUNCTION iskool.current_membership_id() SET search_path = pg_catalog;
+ALTER FUNCTION iskool.normalize_email(text) SET search_path = pg_catalog;
+
+REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated;
