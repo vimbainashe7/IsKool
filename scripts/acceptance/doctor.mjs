@@ -91,21 +91,25 @@ const commonEnv = [
   'SERVICE_NAME',
   'PORT',
   'DATABASE_URL',
-  'REDIS_HOST',
-  'REDIS_PORT',
   'JWT_PRIVATE_KEY_PEM',
   'JWT_PUBLIC_KEY_PEM',
   'JWT_KEY_ID'
 ];
 const apsEnv = readServiceEnv('aps-api');
 const samsEnv = readServiceEnv('sams-api');
-const apsEnvOk = checkEnv('APS', apsEnv, [...commonEnv, 'SAMS_INTERNAL_BASE_URL']);
+const redisEnv = (env) => (env.REDIS_ENABLED === 'false' ? [] : ['REDIS_HOST', 'REDIS_PORT']);
+const apsEnvOk = checkEnv('APS', apsEnv, [...commonEnv, ...redisEnv(apsEnv), 'SAMS_INTERNAL_BASE_URL']);
 const samsEnvOk = checkEnv('SAMS', samsEnv, [
   ...commonEnv,
+  ...redisEnv(samsEnv),
   'APS_JWT_PRIVATE_KEY_PEM',
   'APS_JWT_PUBLIC_KEY_PEM',
   'APS_JWT_KEY_ID'
 ]);
+
+for (const [label, env] of [['APS', apsEnv], ['SAMS', samsEnv]]) {
+  ok(`${label} Redis`, env.REDIS_ENABLED === 'false' ? 'disabled for local development' : 'enabled');
+}
 
 if (prismaClientGenerated() && samsEnv.DATABASE_URL) {
   process.env = { ...process.env, ...samsEnv };

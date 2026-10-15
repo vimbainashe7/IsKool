@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import Redis from 'ioredis';
 import { PrismaService } from '../../database/prisma.service';
 import { REDIS_CLIENT } from '../../infrastructure/redis/redis.module';
@@ -7,7 +7,7 @@ import { REDIS_CLIENT } from '../../infrastructure/redis/redis.module';
 export class HealthService {
   constructor(
     private readonly prisma: PrismaService,
-    @Inject(REDIS_CLIENT) private readonly redis: Redis
+    @Optional() @Inject(REDIS_CLIENT) private readonly redis?: Redis
   ) {}
 
   live(): { status: 'ok'; timestamp: string } {
@@ -32,14 +32,20 @@ export class HealthService {
       dependencies.database = 'unavailable';
     }
 
-    try {
-      const pong = await this.withTimeout(this.redis.ping());
-      dependencies.redis = pong === 'PONG' ? 'ok' : 'unavailable';
-    } catch {
-      dependencies.redis = 'unavailable';
+    if (process.env.REDIS_ENABLED === 'false') {
+      dependencies.redis = 'disabled';
+    } else {
+      try {
+        const pong = await this.withTimeout(this.redis?.ping() ?? Promise.reject(new Error('Redis client unavailable')));
+        dependencies.redis = pong === 'PONG' ? 'ok' : 'unavailable';
+      } catch {
+        dependencies.redis = 'unavailable';
+      }
     }
 
-    const status = Object.values(dependencies).every((value) => value === 'ok') ? 'ok' : 'degraded';
+    const status = Object.values(dependencies).every((value) => value === 'ok' || value === 'disabled')
+      ? 'ok'
+      : 'degraded';
     return { status, dependencies, timestamp: new Date().toISOString() };
   }
 

@@ -18,6 +18,8 @@ import { HealthModule } from './modules/health/health.module';
 import { JsonLogger } from './common/logging/logger.service';
 import { RequestContextInterceptor } from './common/interceptors/request-context.interceptor';
 
+const redisEnabled = process.env.REDIS_ENABLED !== 'false';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -28,8 +30,8 @@ import { RequestContextInterceptor } from './common/interceptors/request-context
       validationOptions: { abortEarly: false }
     }),
     PrismaModule,
-    RedisModule,
-    ...(process.env.NODE_ENV === 'test' ? [] : [QueueModule]),
+    ...(redisEnabled ? [RedisModule] : []),
+    ...(process.env.NODE_ENV === 'test' || !redisEnabled ? [] : [QueueModule]),
     StorageModule,
     TelemetryModule,
     AuthModule,
