@@ -2,6 +2,7 @@ import "server-only"
 import { z } from "zod"
 import type { IsKoolContext } from "@/features/context/session-contract"
 import { createClient } from "@/lib/supabase/server"
+import { isIsKoolAuthConfigured } from "@/lib/iskool-auth/shared"
 import { canUseDemoSession } from "@/dev/demo-session"
 import { readDemoWorkspace } from "@/dev/workspace-store"
 import { workspaceSchema, type Workspace } from "./contracts"
@@ -52,8 +53,33 @@ export async function loadWorkspace(
 ): Promise<Workspace> {
   if (canUseDemoSession()) return readDemoWorkspace(context)
   const client = await createClient()
-  if (!client || !context.membershipId)
+  if (!context.membershipId)
     throw new Error("Your school workspace is not available.")
+  if (!client && isIsKoolAuthConfigured())
+    return workspaceSchema.parse({
+      asOf: new Date().toISOString(),
+      mode: "live",
+      userId: context.user.id,
+      membershipId: context.membershipId,
+      schoolId: context.school.id,
+      classes: [],
+      assignments: [],
+      submissions: [],
+      grades: [],
+      materials: [],
+      members: [],
+      enrollments: [],
+      teachers: [],
+      timetable: [],
+      notifications: [],
+      jobs: [],
+      drafts: [],
+      audit: [],
+      warnings: [
+        "Your verified school identity is live. Academic projections are not available from the backend yet.",
+      ],
+    })
+  if (!client) throw new Error("Your school workspace is not available.")
   const role = context.activeRole
   const school = context.school.id
   const membership = context.membershipId

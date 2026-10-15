@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { safeReturnPath } from "@/lib/auth/safe-return-path"
-import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 
 const loginFormSchema = z.object({
@@ -33,6 +32,7 @@ const loginFormSchema = z.object({
 })
 
 type LoginFormValues = z.infer<typeof loginFormSchema>
+type SchoolChoice = { id: string; name: string; roles: string[] }
 
 export function LoginForm1({
   className,
@@ -40,6 +40,7 @@ export function LoginForm1({
 }: React.ComponentProps<"div">) {
   const searchParams = useSearchParams()
   const [message, setMessage] = React.useState<string | null>(null)
+  const [schools, setSchools] = React.useState<SchoolChoice[]>([])
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [canDemo, setCanDemo] = React.useState(false)
   const form = useForm<LoginFormValues>({
@@ -54,16 +55,29 @@ export function LoginForm1({
     setCanDemo(process.env.NEXT_PUBLIC_ISKOOL_DEMO === "true" && !process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NODE_ENV !== "production")
   }, [])
 
-  async function onSubmit(values: LoginFormValues) {
+  async function authenticate(values: LoginFormValues, schoolId?: string) {
     setIsSubmitting(true)
     setMessage(null)
 
     try {
-      const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword(values)
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...values, schoolId }),
+      })
+      const body = (await response.json().catch(() => null)) as
+        | { error?: string; code?: string; schools?: SchoolChoice[] }
+        | null
 
-      if (error) {
-        setMessage("Sign in failed. Check your email and password.")
+      if (!response.ok) {
+        if (response.status === 409 && body?.schools?.length) {
+          setSchools(body.schools)
+        }
+        setMessage(
+          response.status === 409
+            ? "Choose the school you want to open."
+            : body?.error ?? "Sign in failed. Check your email and password."
+        )
         return
       }
 
@@ -73,6 +87,10 @@ export function LoginForm1({
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  async function onSubmit(values: LoginFormValues) {
+    await authenticate(values)
   }
 
   return (
@@ -127,6 +145,21 @@ export function LoginForm1({
                     <p role="alert" className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                       {message}
                     </p>
+                  )}
+                  {schools.length > 0 && (
+                    <div className="grid gap-2" aria-label="Choose a school">
+                      {schools.map((school) => (
+                        <Button
+                          key={school.id}
+                          type="button"
+                          variant="outline"
+                          disabled={isSubmitting}
+                          onClick={() => void authenticate(form.getValues(), school.id)}
+                        >
+                          {school.name}
+                        </Button>
+                      ))}
+                    </div>
                   )}
                   <Button type="submit" className="h-11 w-full cursor-pointer rounded-xl" disabled={isSubmitting}>
                     {isSubmitting ? "Signing in..." : "Sign in"}

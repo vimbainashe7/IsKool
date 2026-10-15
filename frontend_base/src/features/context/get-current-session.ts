@@ -12,6 +12,12 @@ import {
   type RoleKey,
 } from "@/lib/permissions/capabilities"
 import { createClient } from "@/lib/supabase/server"
+import { fetchIsKoolContext } from "@/lib/iskool-auth/server"
+import {
+  isIsKoolAuthConfigured,
+  iskoolAuthCookies,
+} from "@/lib/iskool-auth/shared"
+import { toSessionContract } from "@/lib/iskool-auth/session"
 
 const allowedRoles = new Set<RoleKey>(["student", "teacher", "admin"])
 
@@ -25,6 +31,22 @@ type MembershipRow = {
 export const getCurrentSession = cache(
   async (): Promise<SessionContract | null> => {
     const cookieStore = await cookies()
+
+    if (isIsKoolAuthConfigured()) {
+      const sams = cookieStore.get(iskoolAuthCookies.samsAccess)?.value
+      const aps = cookieStore.get(iskoolAuthCookies.apsAccess)?.value
+      if (!sams && !aps) return null
+      try {
+        const context = await fetchIsKoolContext({ sams, aps })
+        return toSessionContract(
+          context,
+          cookieStore.get("iskool-active-role")?.value
+        )
+      } catch {
+        return null
+      }
+    }
+
     const supabase = await createClient()
 
     if (!supabase) {
