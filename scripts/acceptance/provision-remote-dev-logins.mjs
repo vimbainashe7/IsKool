@@ -1,5 +1,7 @@
 import { createPrisma } from './helpers/db.mjs';
-import { boolEnv, requireEnv } from './helpers/env.mjs';
+import { boolEnv, loadEnvFile, requireEnv } from './helpers/env.mjs';
+
+loadEnvFile('.env');
 
 const environment = requireEnv('ISKOOL_ENVIRONMENT');
 if (!['development', 'staging', 'testing'].includes(environment)) {
@@ -64,16 +66,9 @@ async function main() {
       END
       $$;
     `);
-    await prisma.$executeRawUnsafe(`
-      ALTER ROLE ${loginIdent}
-        WITH LOGIN
-        NOSUPERUSER
-        NOCREATEDB
-        NOCREATEROLE
-        INHERIT
-        NOBYPASSRLS
-        PASSWORD ${quoteLiteral(password)};
-    `);
+    // Supabase's managed postgres role can rotate passwords for roles it
+    // creates, but cannot alter SUPERUSER-related attributes afterward.
+    await prisma.$executeRawUnsafe(`ALTER ROLE ${loginIdent} PASSWORD ${quoteLiteral(password)};`);
     await prisma.$executeRawUnsafe(`GRANT ${runtimeIdent} TO ${loginIdent};`);
     console.log(`PASS provisioned ${loginRole} as member of ${runtimeRole}`);
   }
