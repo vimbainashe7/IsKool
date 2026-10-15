@@ -52,11 +52,15 @@ test.describe("live IsKool authentication", () => {
     expect(oldRefresh).toBeTruthy()
     await context.clearCookies({ name: "iskool-aps-access" })
 
-    await page.goto("/student/dashboard")
-    await expect(page).toHaveURL(/\/student\/dashboard$/, { timeout: 60_000 })
+    const workspace = await page.request.get("/api/workspace")
+    expect(workspace.status()).toBe(200)
+    expect((await workspace.json()).mode).toBe("live")
     const after = await context.cookies()
     expect(after.find((cookie) => cookie.name === "iskool-aps-access")?.value).toBeTruthy()
     expect(after.find((cookie) => cookie.name === "iskool-refresh")?.value).not.toBe(oldRefresh)
+
+    await page.goto("/student/dashboard")
+    await expect(page).toHaveURL(/\/student\/dashboard$/, { timeout: 60_000 })
   })
 })
 

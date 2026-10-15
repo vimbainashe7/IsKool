@@ -41,8 +41,6 @@ export async function proxy(request: NextRequest) {
     )
   }
 
-  if (pathname.startsWith("/api/")) return NextResponse.next()
-
   let response: NextResponse
   let authenticated = false
   if (isIsKoolAuthConfigured()) {
@@ -110,6 +108,7 @@ export async function proxy(request: NextRequest) {
     redirect.headers.set('Cache-Control', 'private, no-store')
     return redirect
   }
+  if (pathname.startsWith("/api/")) return response
   const isPublicRoute = publicRoutes.has(pathname) || pathname.startsWith('/errors/')
   const hasDemoSession = canUseDemoSession() && Boolean(request.cookies.get(demoSessionCookie)?.value)
 
