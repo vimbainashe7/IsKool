@@ -17,11 +17,11 @@ test.describe("live IsKool authentication", () => {
     { role: "admin", email: "admin.alpha@example.test", name: "Admin Alpha" },
   ] as const) {
     test(`${account.role} can sign in, reload, and sign out`, async ({ page, context }, testInfo) => {
-      test.setTimeout(120_000)
+      test.setTimeout(240_000)
       if (!password) throw new Error("ISKOOL_TEST_PASSWORD is required for live auth tests.")
       await signIn(page, account.email, password)
       await expect(page).toHaveURL(new RegExp(`/${account.role}/dashboard$`), {
-        timeout: 60_000,
+        timeout: 120_000,
       })
       await expect(page.getByRole("button", { name: "Profile menu" })).toBeVisible()
       await expect(page.getByText("School Alpha", { exact: true }).first()).toBeVisible()
@@ -34,7 +34,7 @@ test.describe("live IsKool authentication", () => {
 
       await page.reload()
       await expect(page).toHaveURL(new RegExp(`/${account.role}/dashboard$`), {
-        timeout: 60_000,
+        timeout: 120_000,
       })
       await page.getByRole("button", { name: "Profile menu" }).click()
       await expect(
@@ -54,10 +54,10 @@ test.describe("live IsKool authentication", () => {
     page,
     context,
   }) => {
-    test.setTimeout(120_000)
+    test.setTimeout(240_000)
     if (!password) throw new Error("ISKOOL_TEST_PASSWORD is required for live auth tests.")
     await signIn(page, "student.alpha@example.test", password)
-    await expect(page).toHaveURL(/\/student\/dashboard$/, { timeout: 60_000 })
+    await expect(page).toHaveURL(/\/student\/dashboard$/, { timeout: 120_000 })
 
     const before = await context.cookies()
     const oldRefresh = before.find((cookie) => cookie.name === "iskool-refresh")?.value
@@ -72,7 +72,7 @@ test.describe("live IsKool authentication", () => {
     expect(after.find((cookie) => cookie.name === "iskool-refresh")?.value).not.toBe(oldRefresh)
 
     await page.goto("/student/dashboard")
-    await expect(page).toHaveURL(/\/student\/dashboard$/, { timeout: 60_000 })
+    await expect(page).toHaveURL(/\/student\/dashboard$/, { timeout: 120_000 })
   })
 
   test("quick-fill cannot grant admin, reject bad passwords and foreign schools", async ({ page }) => {
@@ -88,7 +88,7 @@ test.describe("live IsKool authentication", () => {
     await expect(page.getByRole("alert")).toContainText("Invalid email or password")
 
     await signIn(page, "student.alpha@example.test", password)
-    await expect(page).toHaveURL(/\/student\/dashboard$/, { timeout: 60_000 })
+    await expect(page).toHaveURL(/\/student\/dashboard$/, { timeout: 120_000 })
     await page.goto("/admin/dashboard")
     await expect(page).toHaveURL(/\/student\/dashboard$/)
     await page.goto("/teacher/dashboard")

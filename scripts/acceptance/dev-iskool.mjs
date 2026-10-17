@@ -197,7 +197,8 @@ try {
       children.push(child);
       child.on('error', () => { console.error(`${service.kind} could not start.`); stop(1); });
       child.on('exit', (code) => { if (!stopping) { console.error(`${service.kind} exited (${code}).`); stop(code || 1); } });
-      const deadline = Date.now() + 180000;
+      console.log(`Starting ${service.kind}; waiting for readiness (first Windows frontend compilation can take several minutes).`);
+      const deadline = Date.now() + 300000;
       while (!stopping && Date.now() < deadline && !await healthy(service)) await new Promise((resolve) => setTimeout(resolve, 1500));
       if (stopping || !await healthy(service)) fail(`${service.kind} failed readiness. Run npm run acceptance:doctor and inspect service logs.`);
       writeFileSync(service.manifest, JSON.stringify({ pid: child.pid, fingerprint: service.fingerprint }));
