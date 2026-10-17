@@ -7,4 +7,12 @@ ALTER FUNCTION iskool.current_school_id() SET search_path = pg_catalog;
 ALTER FUNCTION iskool.current_membership_id() SET search_path = pg_catalog;
 ALTER FUNCTION iskool.normalize_email(text) SET search_path = pg_catalog;
 
-REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated;
+-- Some hosted projects install this provider helper; a fresh CLI database does
+-- not. Preserve the hosted revocation without preventing clean migration replay.
+DO $$
+BEGIN
+  IF to_regprocedure('public.rls_auto_enable()') IS NOT NULL THEN
+    REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated;
+  END IF;
+END
+$$;

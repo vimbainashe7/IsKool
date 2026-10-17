@@ -2,6 +2,9 @@ import { expect, test, type Page } from "@playwright/test"
 
 const live = process.env.ISKOOL_LIVE_AUTH === "true"
 const password = process.env.ISKOOL_TEST_PASSWORD
+// Playwright's AI error context includes password-input values in ARIA snapshots.
+// Preserve screenshots and assertion output without capturing that private DOM.
+if (live) process.env.PLAYWRIGHT_NO_COPY_PROMPT = "1"
 // Login payloads and rotating cookies must not be retained in trace archives.
 test.use({ trace: "off" })
 
@@ -112,7 +115,11 @@ async function signIn(page: Page, email: string, password: string) {
   const role = email.split(".")[0]
   await page.getByRole("button", { name: role[0].toUpperCase() + role.slice(1), exact: true }).click()
   await expect(page.getByRole("textbox", { name: "Email" })).toHaveValue(email)
-  await page.getByLabel("Development seed password").fill(password)
+  try {
+    await page.getByLabel("Development seed password").fill(password)
+  } catch {
+    throw new Error("Could not enter the private development fixture password.")
+  }
   expect((await page.getByLabel("Password", { exact: true }).inputValue()) === password).toBe(true)
   await page.getByRole("button", { name: "Sign in", exact: true }).click()
 }
