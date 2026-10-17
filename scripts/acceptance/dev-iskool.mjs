@@ -107,7 +107,7 @@ function describeOwner(details) {
 }
 async function healthy(service) {
   try {
-    const response = await fetch(service.url, { signal: AbortSignal.timeout(5000), redirect: 'manual' });
+    const response = await fetch(service.url, { signal: AbortSignal.timeout(service.kind === 'frontend' ? 30000 : 10000), redirect: 'manual' });
     if (!response.ok) return false;
     if (service.kind === 'frontend') return (await response.text()).includes('Welcome back');
     const body = await response.json();
@@ -210,12 +210,17 @@ try {
     if (!frontendOnly) console.log('Backend Swagger: http://127.0.0.1:3001/api/v1/docs and http://127.0.0.1:3002/api/v1/docs');
     if (!backendOnly) console.log('Live sign-in: http://127.0.0.1:3000/sign-in (academic projections remain future work).');
     console.log('Ctrl+C stops only services started by this invocation. Reused services remain running.');
+    let probing = false;
     const monitor = setInterval(async () => {
-      for (const service of services) {
-        service.failures = await healthy(service) ? 0 : (service.failures ?? 0) + 1;
-        if (service.failures) console.error(`${service.kind}: readiness failed (${service.failures}/3); checking again.`);
-        if (service.failures >= 3) { console.error(`${service.kind} lost readiness.`); clearInterval(monitor); stop(1); break; }
-      }
+      if (probing || stopping) return;
+      probing = true;
+      try {
+        for (const service of services) {
+          service.failures = await healthy(service) ? 0 : (service.failures ?? 0) + 1;
+          if (service.failures) console.error(`${service.kind}: readiness failed (${service.failures}/3); checking again.`);
+          if (service.failures >= 3) { console.error(`${service.kind} lost readiness.`); clearInterval(monitor); stop(1); break; }
+        }
+      } finally { probing = false; }
     }, 15000);
     monitor.unref();
   }
