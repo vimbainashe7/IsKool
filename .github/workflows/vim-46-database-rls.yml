@@ -168,6 +168,30 @@ jobs:
       - name: Generate Prisma client for acceptance scripts
         run: npm run prisma:generate
 
+      - name: Provision runtime logins only in the disposable local CI database
+        env:
+          NODE_ENV: development
+          ISKOOL_ENVIRONMENT: testing
+          ALLOW_REMOTE_DEV_PROVISION: "true"
+          MIGRATION_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          ISKOOL_APS_DEV_DB_PASSWORD: ci-aps-runtime-password
+          ISKOOL_SAMS_DEV_DB_PASSWORD: ci-sams-runtime-password
+          ISKOOL_AUTH_DEV_DB_PASSWORD: ci-auth-runtime-password
+        run: |
+          npm run db:provision:remote-dev
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          for (const service of ['aps', 'sams']) {
+            const path = `apps/${service}-api/.env`;
+            let source = readFileSync(path, 'utf8');
+            const runtime = `postgresql://iskool_${service}_dev_login:${process.env[`ISKOOL_${service.toUpperCase()}_DEV_DB_PASSWORD`]}@127.0.0.1:54322/postgres`;
+            const auth = `postgresql://iskool_auth_dev_login:${process.env.ISKOOL_AUTH_DEV_DB_PASSWORD}@127.0.0.1:54322/postgres`;
+            source = source.replace(/^DATABASE_URL=.*$/m, `DATABASE_URL=${runtime}`);
+            source = source.replace(/^AUTH_DATABASE_URL=.*\n?/m, '');
+            writeFileSync(path, `${source.trimEnd()}\nAUTH_DATABASE_URL=${auth}\n`);
+          }
+          NODE
+
       - name: Seed M2 development acceptance data
         run: npm run db:seed:dev
         env:
