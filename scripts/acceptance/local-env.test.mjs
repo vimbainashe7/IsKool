@@ -4,13 +4,20 @@ import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { readLocalEnv } from './helpers/local-env.mjs';
+import { samePrismaSchema } from './helpers/preflight.mjs';
+
+test('generated Prisma formatting is accepted but model and quoted-default changes are stale', () => {
+  assert.equal(samePrismaSchema('model A {\n id  String\n}', 'model A {\r\n  id String\r\n}'), true);
+  assert.equal(samePrismaSchema('model A { id String }', 'model A { id Int }'), false);
+  assert.equal(samePrismaSchema('x @default("a  b")', 'x @default("a b")'), false);
+});
 
 test('separate service environments cannot leak ports or credentials into one another', () => {
   const directory = mkdtempSync(join(tmpdir(), 'iskool-env-test-'));
   try {
     const aps = join(directory, 'aps.env');
     const sams = join(directory, 'sams.env');
-    writeFileSync(aps, 'PORT=3001\nSERVICE_NAME=aps-api\n');
+    writeFileSync(aps, '\uFEFFPORT=3001\nSERVICE_NAME=aps-api\n');
     writeFileSync(sams, 'PORT=3002\nSERVICE_NAME=sams-api\n');
     const before = process.env.PORT;
     assert.equal(readLocalEnv([sams], {}).PORT, '3002');

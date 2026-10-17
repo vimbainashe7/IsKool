@@ -7,6 +7,13 @@ export function prismaClientGenerated() {
   return existsSync('node_modules/.prisma/client/index.js');
 }
 
+export function samePrismaSchema(left, right) {
+  // Prisma aligns fields while generating. Compare tokens, preserving spaces
+  // inside quoted defaults rather than treating formatting as stale generation.
+  const tokens = (source) => source.match(/"(?:\\.|[^"\\])*"|[^\s"]+/g)?.join('\0');
+  return tokens(left) === tokens(right);
+}
+
 export function assertPrismaClientGenerated() {
   if (!prismaClientGenerated()) {
     throw new Error('Prisma Client is not generated. Run npm ci, then npm run prisma:generate.');

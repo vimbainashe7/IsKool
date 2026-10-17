@@ -171,6 +171,9 @@ jobs:
       - name: Seed M2 development acceptance data
         run: npm run db:seed:dev
         env:
+          # Administrative fixture writes target only this disposable CI database.
+          # Service requests continue using the generated least-privilege URLs.
+          MIGRATION_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
           NODE_ENV: development
           ISKOOL_ENVIRONMENT: development
           ALLOW_DEV_SEED: "true"

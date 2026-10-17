@@ -7,7 +7,7 @@ export function readLocalEnv(files, inherited = process.env) {
   let env = { ...inherited };
   for (const file of files) {
     let source;
-    try { source = readFileSync(file, 'utf8'); } catch { throw new Error(`Missing local configuration: ${file}. Follow the root README.`); }
+    try { source = readFileSync(file, 'utf8').replace(/^\uFEFF/, ''); } catch { throw new Error(`Missing local configuration: ${file}. Follow the root README.`); }
     const seen = new Set();
     for (const line of source.split(/\r?\n/)) {
       const key = line.match(/^\s*(?:export\s+)?([A-Za-z_][A-Za-z_0-9]*)\s*=/)?.[1];

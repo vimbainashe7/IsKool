@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { spawn, spawnSync } from 'node:child_process';
 import { createConnection } from 'node:net';
 import { readLocalEnv } from './helpers/local-env.mjs';
+import { samePrismaSchema } from './helpers/preflight.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 // Prisma may load the env path recorded by the last generated client. Keep each
@@ -139,7 +140,7 @@ try {
   if (!frontendOnly) {
     if (!existsSync(join(root, 'node_modules/.prisma/client/index.js'))) fail('Prisma client missing. With Node 22 run npm ci, then npm run prisma:generate.');
     const generatedSchema = join(root, 'node_modules/.prisma/client/schema.prisma');
-    if (!existsSync(generatedSchema) || readFileSync(generatedSchema, 'utf8').replace(/\r\n/g, '\n') !== readFileSync(join(root, 'database/prisma/schema.prisma'), 'utf8').replace(/\r\n/g, '\n')) fail('Prisma client schema is stale. With Node 22 run npm run prisma:generate before starting services.');
+    if (!existsSync(generatedSchema) || !samePrismaSchema(readFileSync(generatedSchema, 'utf8'), readFileSync(join(root, 'database/prisma/schema.prisma'), 'utf8'))) fail('Prisma client schema is stale. With Node 22 run npm run prisma:generate before starting services.');
     for (const [kind, port] of [['sams', 3002], ['aps', 3001]]) {
       const env = environment(`${kind}-api`);
       await validateDatabase(env, `${kind}-api`);
