@@ -7,7 +7,7 @@ if (Number(process.versions.node.split('.')[0]) !== 24) {
   process.exit(1);
 }
 const args = process.argv.slice(2);
-if (args.some((arg) => /^(--hostname|-H)(=|$)/.test(arg))) {
+if (args.some((arg) => /^(--hostname(?:=|$)|-H)/.test(arg))) {
   throw new Error('Local development binds to 127.0.0.1. Do not override the hostname.');
 }
 const defaultPort = args.length === 0 || (args.length === 2 && ['--port', '-p'].includes(args[0]) && args[1] === '3000');

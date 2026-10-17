@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:production-accounts": "node scripts/verify-production-accounts.mjs",
     "test:e2e": "playwright test",
     "test:rls": "node scripts/check-rls-prerequisites.mjs",
     "check:secrets": "node scripts/check-client-secrets.mjs"

@@ -169,7 +169,7 @@ try {
         try {
           const response = await fetch('http://127.0.0.1:3000/api/dev/local-status', { signal: AbortSignal.timeout(5000) });
           const status = await response.json();
-          verifiedFrontend = response.ok && status.service === 'iskool-frontend' && status.checkout === hash(realpathSync(join(root, 'frontend_base'))) && status.head === head && status.mode === 'live' && status.node.startsWith('24.');
+          verifiedFrontend = service.env.ISKOOL_DEV_ACCOUNTS === 'true' && response.ok && status.service === 'iskool-frontend' && status.checkout === hash(realpathSync(join(root, 'frontend_base'))) && status.head === head && status.mode === 'live' && status.node.startsWith('24.');
         } catch { /* fail closed */ }
       }
       const verifiedLease = lease?.fingerprint === service.fingerprint && details.includes(String(lease.pid)) && details.toLowerCase().includes(JSON.stringify(root).slice(1, -1).toLowerCase());
@@ -204,7 +204,10 @@ try {
       writeFileSync(service.manifest, JSON.stringify({ pid: child.pid, fingerprint: service.fingerprint }));
       console.log(`READY ${service.kind}: ${service.url}`);
     }
-    console.log('PASS requested IsKool services ready. Backend Swagger: http://127.0.0.1:3001/api/v1/docs and http://127.0.0.1:3002/api/v1/docs');
+    if (frontendOnly) console.log('PASS frontend only ready. APS/SAMS were not started or verified; use npm run dev:iskool for the fully connected session.');
+    else if (backendOnly) console.log('PASS APS and SAMS ready. Frontend was not started or verified.');
+    else console.log('PASS LIVE IsKool ready: frontend, APS and SAMS verified.');
+    if (!frontendOnly) console.log('Backend Swagger: http://127.0.0.1:3001/api/v1/docs and http://127.0.0.1:3002/api/v1/docs');
     if (!backendOnly) console.log('Live sign-in: http://127.0.0.1:3000/sign-in (academic projections remain future work).');
     console.log('Ctrl+C stops only services started by this invocation. Reused services remain running.');
     const monitor = setInterval(async () => {

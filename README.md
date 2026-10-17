@@ -68,6 +68,9 @@ npm run dev:iskool
 
 The Windows launcher independently selects Node 22/24, validates non-production runtime database privileges, checks all requested ports before starting, builds backend code, then waits for actual database readiness and frontend sign-in. It reuses compatible healthy services from this checkout, reports stale/foreign listeners, and never kills arbitrary PIDs. Ctrl+C stops only children it started. Startup runs no migrations, provisioning or seeds. Backend source edits require restarting the launcher to rebuild; the frontend retains Next.js hot reload.
 
+Unchanged backend sources reuse a verified build. The first frontend compilation on an 8 GB Windows laptop can take several minutes; startup prints its wait and allows up to five minutes before failing. Free memory by closing unused apps if worker startup or compilation times out.
+On a memory-constrained laptop, stop the dev launcher with Ctrl+C while running unit tests or production builds, then restart it for live browser acceptance.
+
 ### Start backend separately
 
 ```powershell
@@ -145,6 +148,7 @@ pnpm typecheck
 pnpm test
 pnpm build
 pnpm check:secrets
+pnpm test:production-accounts # Stop the dev frontend first; checks a real production server.
 $env:ISKOOL_LIVE_AUTH='true'
 $env:ISKOOL_E2E_PORT='3000'
 # Set ISKOOL_TEST_PASSWORD privately to the configured fixture password.

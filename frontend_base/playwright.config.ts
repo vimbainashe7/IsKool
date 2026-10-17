@@ -10,7 +10,9 @@ export default defineConfig({
   workers: 1,
   timeout: 60000,
   expect: { timeout: 15000 },
-  reporter: [["list"], ["html", { open: "never" }]],
+  reporter: process.env.ISKOOL_LIVE_AUTH === "true"
+    ? [["./tests/live-auth-redaction-reporter.ts"], ["list"], ["html", { open: "never" }]]
+    : [["list"], ["html", { open: "never" }]],
   use: {
     baseURL,
     trace: "retain-on-failure",
