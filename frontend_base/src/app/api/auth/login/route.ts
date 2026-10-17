@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import { isSameOrigin } from "@/lib/auth/same-origin"
 
 import { loginWithIsKool, IsKoolAuthError } from "@/lib/iskool-auth/server"
 import {
@@ -16,7 +17,7 @@ const inputSchema = z.object({
 })
 
 export async function POST(request: Request) {
-  if (request.headers.get("origin") !== new URL(request.url).origin)
+  if (!isSameOrigin(request))
     return NextResponse.json({ error: "Request could not be verified." }, { status: 403 })
   if (!isIsKoolAuthConfigured())
     return NextResponse.json({ error: "Sign in is not configured." }, { status: 503 })

@@ -29,4 +29,11 @@ describe("IsKool session mapping", () => {
   it("rejects contexts without a supported product role", () => {
     expect(toSessionContract({ ...context, roles: ["owner"] })).toBeNull()
   })
+
+  it("ignores an admin selection when the verified membership only permits student", () => {
+    const session = toSessionContract({ ...context, roles: ["student"] }, "admin")
+    expect(session?.context.activeRole).toBe("student")
+    expect(session?.context.roles).toEqual(["student"])
+    expect(session?.context.capabilities).not.toContain("users.manage")
+  })
 })

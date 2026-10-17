@@ -81,7 +81,7 @@ if (existsSync(tscPath)) {
 }
 
 if (prismaClientGenerated()) {
-  ok('Prisma generated', 'node_modules/@prisma/client/index.js exists');
+  ok('Prisma generated', 'node_modules/.prisma/client/index.js exists');
 } else {
   fail('Prisma generated', 'run npm run prisma:generate');
 }
@@ -123,7 +123,7 @@ if (prismaClientGenerated() && samsEnv.DATABASE_URL) {
       await prisma.$disconnect();
     }
   } catch (error) {
-    fail('database', error instanceof Error ? error.message : String(error));
+    fail('database', 'connection failed; check network, session-pooler settings and runtime credentials (details withheld to protect secrets)');
   }
 } else if (apsEnvOk || samsEnvOk) {
   warn('database', 'skipped because Prisma or DATABASE_URL is missing');

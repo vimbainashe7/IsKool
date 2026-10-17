@@ -36,13 +36,16 @@ type SchoolChoice = { id: string; name: string; roles: string[] }
 
 export function LoginForm1({
   className,
+  developmentAccounts = false,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div"> & { developmentAccounts?: boolean }) {
   const searchParams = useSearchParams()
   const [message, setMessage] = React.useState<string | null>(null)
   const [schools, setSchools] = React.useState<SchoolChoice[]>([])
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [canDemo, setCanDemo] = React.useState(false)
+  const [devPassword, setDevPassword] = React.useState("")
+  const [selectedAccount, setSelectedAccount] = React.useState<string | null>(null)
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
@@ -107,6 +110,35 @@ export function LoginForm1({
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <div className="grid gap-6">
                 <div className="grid gap-4">
+                  {developmentAccounts && (
+                    <fieldset className="grid gap-3 rounded-xl border border-iskool-cream bg-iskool-cream/45 p-3" disabled={isSubmitting}>
+                      <legend className="px-1 text-sm font-medium">Development accounts</legend>
+                      <p id="dev-account-help" className="text-xs text-muted-foreground">
+                        Live local testing. Enter your seed password once for this page. Selecting an account only fills the form.
+                      </p>
+                      <label htmlFor="dev-seed-password" className="text-sm font-medium">Development seed password</label>
+                      <Input id="dev-seed-password" type="password" autoComplete="off" aria-describedby="dev-account-help" value={devPassword}
+                        onChange={(event) => {
+                          setDevPassword(event.target.value)
+                          form.setValue("password", event.target.value, { shouldDirty: true, shouldValidate: true })
+                        }} />
+                      <div className="grid grid-cols-3 gap-2" role="group" aria-label="Select development account">
+                        {["Student", "Teacher", "Admin"].map((role) => (
+                          <Button key={role} type="button" size="sm" variant={selectedAccount === role ? "default" : "outline"}
+                            aria-pressed={selectedAccount === role}
+                            onClick={() => {
+                              setSelectedAccount(role)
+                              setSchools([])
+                              setMessage(null)
+                              form.setValue("email", `${role.toLowerCase()}.alpha@example.test`, { shouldDirty: true, shouldValidate: true })
+                              if (devPassword) form.setValue("password", devPassword, { shouldDirty: true, shouldValidate: true })
+                            }}>
+                            {role}
+                          </Button>
+                        ))}
+                      </div>
+                    </fieldset>
+                  )}
                   <FormField
                     control={form.control}
                     name="email"

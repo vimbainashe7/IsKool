@@ -25,8 +25,8 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
     env: {
-      ISKOOL_ENABLE_DEMO: "true",
-      NEXT_PUBLIC_ISKOOL_DEMO: "true",
+      ISKOOL_ENABLE_DEMO: process.env.ISKOOL_LIVE_AUTH === "true" ? "false" : "true",
+      NEXT_PUBLIC_ISKOOL_DEMO: process.env.ISKOOL_LIVE_AUTH === "true" ? "false" : "true",
       NEXT_PUBLIC_SUPABASE_URL: "",
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "",

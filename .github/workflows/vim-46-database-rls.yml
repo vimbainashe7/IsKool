@@ -2,9 +2,9 @@ name: IsKool Architecture Gate
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, frontend/workspace-redesigns-2026-10-13]
   push:
-    branches: [main]
+    branches: [main, frontend/workspace-redesigns-2026-10-13]
   workflow_dispatch:
 
 concurrency:
@@ -26,6 +26,9 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - run: npm ci
+
+      - name: Verify isolated local service configuration
+        run: npm run test:dev
 
       - name: Generate Prisma client
         run: npm run prisma:generate

@@ -55,7 +55,12 @@
     "smoke:audit": "node scripts/acceptance/m2-audit.mjs",
     "db:rls:test": "node scripts/test-rls-foundation.mjs",
     "db:auth:test": "node scripts/test-auth-foundation.mjs",
-    "db:drift:check": "node scripts/check-prisma-drift.mjs"
+    "db:drift:check": "node scripts/check-prisma-drift.mjs",
+    "dev:iskool": "node scripts/acceptance/dev-iskool.mjs",
+    "dev:frontend": "node scripts/acceptance/dev-iskool.mjs --frontend",
+    "dev:check": "node scripts/acceptance/dev-iskool.mjs --check",
+    "check:secrets": "node scripts/acceptance/check-secrets.mjs",
+    "test:dev": "node --test scripts/acceptance/local-env.test.mjs"
   },
   "devDependencies": {
     "supabase": "^2.119.0"
