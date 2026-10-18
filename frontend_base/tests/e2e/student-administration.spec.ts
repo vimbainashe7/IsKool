@@ -209,6 +209,15 @@ test.describe("live SAMS student administration", () => {
       data: { givenName: "Stale", version: 1 },
     })
     expect(stale.status()).toBe(409)
+    // Reentry creates a new row; the withdrawn history must remain intact.
+    await page.getByLabel("Class", { exact: true }).selectOption(schoolClass.id)
+    await page.getByLabel("Academic term", { exact: true }).selectOption(term.id)
+    await page.getByLabel("Enrollment status", { exact: true }).selectOption("active")
+    const reentry = await save(page, "Enroll student", `students/${student.id}/enrollments`)
+    expect(reentry.id).not.toBe(enrollment.id)
+    await page.reload()
+    await expect(page.getByTestId(`enrollment-${enrollment.id}-status`)).toHaveText("withdrawn", { timeout: 120_000 })
+    await expect(page.getByTestId(`enrollment-${reentry.id}-status`)).toHaveText("active", { timeout: 120_000 })
     await page.screenshot({
       path: info.outputPath("student-detail-persisted.png"),
       fullPage: true,
@@ -229,6 +238,7 @@ test.describe("live SAMS student administration", () => {
         studentId: student.id,
         guardianId: guardian.id,
         enrollmentId: enrollment.id,
+        reentryId: reentry.id,
         admissionNumber,
         updatedName,
         classId: schoolClass.id,

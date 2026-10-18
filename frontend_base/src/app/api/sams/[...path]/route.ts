@@ -1,6 +1,7 @@
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { randomUUID } from "node:crypto"
+import { isSameOrigin } from "@/lib/auth/same-origin"
 import { getIsKoolApiUrls, iskoolAuthCookies } from "@/lib/iskool-auth/shared"
 export const dynamic = "force-dynamic"
 const headers = { "Cache-Control": "private, no-store" }
@@ -28,7 +29,7 @@ async function handle(
   if (!routes[request.method]?.test(path))
     return error("This school record action is unavailable.", 404)
   const url = new URL(request.url)
-  if (request.method !== "GET" && request.headers.get("origin") !== url.origin)
+  if (request.method !== "GET" && !isSameOrigin(request))
     return error("This request could not be verified.", 403)
   if (
     [...url.searchParams.keys()].some(

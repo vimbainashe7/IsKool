@@ -13,6 +13,7 @@ beforeEach(() => {
   mocks.cookie.mockReturnValue({ value: "test-token-notreal" })
 })
 afterEach(() => {
+  vi.unstubAllEnvs()
   vi.unstubAllGlobals()
   vi.clearAllMocks()
 })
@@ -106,4 +107,18 @@ it("redacts internal server failures", async () => {
   )
   expect(response.status).toBe(500)
   expect(await response.text()).not.toContain("private database details")
+})
+
+it("accepts the browser's 127.0.0.1 origin on the verified loopback launcher when Next normalizes its URL", async () => {
+  vi.stubEnv("NODE_ENV", "development")
+  vi.stubEnv("ISKOOL_DEV_LOOPBACK", "127.0.0.1")
+  const fetcher = vi.fn().mockResolvedValue(Response.json({ id: "created" }, { status: 201 }))
+  vi.stubGlobal("fetch", fetcher)
+  const response = await POST(new Request("http://localhost:3000/api/sams/students", {
+    method: "POST",
+    headers: { origin: "http://127.0.0.1:3000", host: "127.0.0.1:3000" },
+    body: JSON.stringify({ admissionNumber: "ORIGIN-REGRESSION", givenName: "Local", familyName: "Learner" }),
+  }), params(["students"]))
+  expect(response.status).toBe(201)
+  expect(fetcher).toHaveBeenCalledOnce()
 })

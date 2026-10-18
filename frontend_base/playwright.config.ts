@@ -3,7 +3,9 @@ const port = process.env.ISKOOL_E2E_PORT ?? "3100"
 if (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535) {
   throw new Error("ISKOOL_E2E_PORT must be a valid local port.")
 }
-const baseURL = `http://localhost:${Number(port)}`
+// Live acceptance must use the exact address documented for the owner.
+const host = process.env.ISKOOL_LIVE_AUTH === "true" ? "127.0.0.1" : "localhost"
+const baseURL = `http://${host}:${Number(port)}`
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false,
