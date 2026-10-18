@@ -53,6 +53,7 @@
     "smoke:auth": "node scripts/acceptance/m2-auth.mjs",
     "smoke:authorization": "npm run build:packages && node scripts/acceptance/m2-security.mjs",
     "smoke:audit": "node scripts/acceptance/m2-audit.mjs",
+    "db:master-data:test": "node scripts/test-sams-master-data.mjs",
     "db:rls:test": "node scripts/test-rls-foundation.mjs",
     "db:auth:test": "node scripts/test-auth-foundation.mjs",
     "db:drift:check": "node scripts/check-prisma-drift.mjs",

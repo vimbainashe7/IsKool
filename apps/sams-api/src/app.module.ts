@@ -12,6 +12,7 @@ import { QueueModule } from './infrastructure/queue/queue.module';
 import { RedisModule } from './infrastructure/redis/redis.module';
 import { StorageModule } from './infrastructure/storage/storage.module';
 import { TelemetryModule } from './infrastructure/telemetry/telemetry.module';
+import { StudentModule } from './modules/students/student.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { FoundationModule } from './modules/foundation/foundation.module';
@@ -37,6 +38,7 @@ const redisEnabled = process.env.REDIS_ENABLED !== 'false';
     TelemetryModule,
     AuthModule,
     AuditModule,
+    StudentModule,
     HealthModule,
     FoundationModule
   ],

@@ -13,6 +13,9 @@ model School {
   status      String       @default("active")
   createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  students Student[]
+  guardians Guardian[]
+  academicYears AcademicYear[]
   memberships Membership[]
   authSessions AuthSession[]
   auditEvents  AuditEvent[]
@@ -180,4 +183,114 @@ model AuditEvent {
   @@index([entityType, entityId], map: "audit_events_entity_idx")
   @@index([requestId], map: "audit_events_request_id_idx")
   @@map("audit_events")
+}
+
+model Student {
+  id String @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
+  schoolId String @map("school_id") @db.Uuid
+  admissionNumber String @map("admission_number")
+  givenName String @map("given_name")
+  familyName String @map("family_name")
+  status String @default("active")
+  version Int @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  school School @relation(fields:[schoolId], references:[id], onDelete:Restrict, onUpdate:NoAction)
+  guardians StudentGuardian[]
+  enrollments Enrollment[]
+  @@unique([id,schoolId])
+  @@unique([schoolId,admissionNumber])
+  @@index([schoolId,id], map:"students_school_id_idx")
+  @@index([schoolId,familyName,givenName,id], map:"students_school_name_idx")
+  @@map("students")
+}
+model Guardian {
+  id String @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
+  schoolId String @map("school_id") @db.Uuid
+  fullName String @map("full_name")
+  email String
+  phone String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  school School @relation(fields:[schoolId], references:[id], onDelete:Restrict, onUpdate:NoAction)
+  students StudentGuardian[]
+  @@unique([id,schoolId])
+  @@unique([schoolId,email])
+  @@map("guardians")
+}
+model StudentGuardian {
+  studentId String @map("student_id") @db.Uuid
+  guardianId String @map("guardian_id") @db.Uuid
+  schoolId String @map("school_id") @db.Uuid
+  relationship String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  student Student @relation(fields:[studentId,schoolId], references:[id,schoolId], onDelete:Restrict, onUpdate:NoAction)
+  guardian Guardian @relation(fields:[guardianId,schoolId], references:[id,schoolId], onDelete:Restrict, onUpdate:NoAction)
+  @@id([studentId,guardianId])
+  @@index([schoolId,guardianId],map:"student_guardians_guardian_idx")
+  @@map("student_guardians")
+}
+model AcademicYear {
+  id String @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
+  schoolId String @map("school_id") @db.Uuid
+  label String
+  startsOn DateTime @map("starts_on") @db.Date
+  endsOn DateTime @map("ends_on") @db.Date
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  school School @relation(fields:[schoolId], references:[id], onDelete:Restrict, onUpdate:NoAction)
+  terms AcademicTerm[]
+  classes SchoolClass[]
+  @@unique([id,schoolId])
+  @@unique([schoolId,label])
+  @@map("academic_years")
+}
+model AcademicTerm {
+  id String @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
+  schoolId String @map("school_id") @db.Uuid
+  academicYearId String @map("academic_year_id") @db.Uuid
+  label String
+  startsOn DateTime @map("starts_on") @db.Date
+  endsOn DateTime @map("ends_on") @db.Date
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  year AcademicYear @relation(fields:[academicYearId,schoolId], references:[id,schoolId], onDelete:Restrict, onUpdate:NoAction)
+  enrollments Enrollment[]
+  @@unique([id,schoolId,academicYearId])
+  @@unique([schoolId,academicYearId,label])
+  @@map("academic_terms")
+}
+model SchoolClass {
+  id String @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
+  schoolId String @map("school_id") @db.Uuid
+  academicYearId String @map("academic_year_id") @db.Uuid
+  name String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  year AcademicYear @relation(fields:[academicYearId,schoolId], references:[id,schoolId], onDelete:Restrict, onUpdate:NoAction)
+  enrollments Enrollment[]
+  @@unique([id,schoolId,academicYearId])
+  @@unique([schoolId,academicYearId,name])
+  @@map("classes")
+}
+model Enrollment {
+  id String @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
+  schoolId String @map("school_id") @db.Uuid
+  studentId String @map("student_id") @db.Uuid
+  classId String @map("class_id") @db.Uuid
+  academicYearId String @map("academic_year_id") @db.Uuid
+  academicTermId String @map("academic_term_id") @db.Uuid
+  status String @default("pending")
+  enrolledAt DateTime @default(now()) @map("enrolled_at") @db.Timestamptz(6)
+  endedAt DateTime? @map("ended_at") @db.Timestamptz(6)
+  version Int @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  student Student @relation(fields:[studentId,schoolId], references:[id,schoolId], onDelete:Restrict, onUpdate:NoAction)
+  schoolClass SchoolClass @relation(fields:[classId,schoolId,academicYearId], references:[id,schoolId,academicYearId], onDelete:Restrict, onUpdate:NoAction)
+  term AcademicTerm @relation(fields:[academicTermId,schoolId,academicYearId], references:[id,schoolId,academicYearId], onDelete:Restrict, onUpdate:NoAction)
+  @@index([schoolId,studentId,enrolledAt(sort:Desc),id],map:"enrollments_student_history_idx")
+  @@index([schoolId,classId,academicTermId,status],map:"enrollments_class_status_idx")
+  @@map("enrollments")
 }

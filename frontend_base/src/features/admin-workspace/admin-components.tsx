@@ -153,6 +153,7 @@ export function AdminMetricCard({
 }
 export function AdminSectionCard({
   title,
+  description,
   children,
   href,
   capability,
@@ -160,6 +161,7 @@ export function AdminSectionCard({
   className = "",
 }: {
   title: string
+  description?: string
   children: ReactNode
   href?: string
   capability?: Capability
@@ -177,6 +179,7 @@ export function AdminSectionCard({
           </AdminLink>
         )}
       </div>
+      {description && <p className={styles.note}>{description}</p>}
       {children}
     </Card>
   )
