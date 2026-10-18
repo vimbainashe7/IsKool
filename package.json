@@ -50,6 +50,7 @@
     "db:inspect:safe": "node scripts/acceptance/db-inspect.mjs",
     "db:provision:remote-dev": "node scripts/acceptance/provision-remote-dev-logins.mjs",
     "db:seed:dev": "node scripts/acceptance/seed-dev.mjs",
+    "smoke:vim-51": "node scripts/acceptance/vim-51.mjs",
     "smoke:auth": "node scripts/acceptance/m2-auth.mjs",
     "smoke:authorization": "npm run build:packages && node scripts/acceptance/m2-security.mjs",
     "smoke:audit": "node scripts/acceptance/m2-audit.mjs",

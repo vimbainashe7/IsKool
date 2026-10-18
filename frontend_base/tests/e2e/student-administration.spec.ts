@@ -3,7 +3,7 @@ import { writeFileSync } from "node:fs"
 const live = process.env.ISKOOL_LIVE_AUTH === "true"
 const password = process.env.ISKOOL_TEST_PASSWORD
 if (live) process.env.PLAYWRIGHT_NO_COPY_PROMPT = "1"
-test.use({ trace: "off" })
+test.use({ trace: "off", actionTimeout: 90_000, navigationTimeout: 120_000 })
 test.afterEach(async ({ page }, info) => {
   if (!live || !password) return
   for (const error of info.errors) {
@@ -121,7 +121,7 @@ test.describe("live SAMS student administration", () => {
     const row = page.getByRole("listitem").filter({ hasText: admissionNumber })
     await expect(row).toBeVisible()
     await row.getByRole("link", { name: "Open record", exact: true }).click()
-    await expect(page).toHaveURL(new RegExp(`/admin/students/${student.id}$`))
+    await expect(page).toHaveURL(new RegExp(`/admin/students/${student.id}$`), { timeout: 120_000 })
     await expect(
       page.getByRole("heading", { name: "Guardians", exact: true })
     ).toBeVisible({ timeout: 120_000 })

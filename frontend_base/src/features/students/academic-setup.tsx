@@ -83,7 +83,7 @@ export function AcademicSetup({ onSaved }: { onSaved: () => void }) {
       {error && <p role="alert">{error}</p>}
       {data && (
         <p className="text-sm text-muted-foreground">
-          {data.years.map((y) => y.label).join(" � ") ||
+          {data.years.map((y) => y.label).join(" | ") ||
             "No academic year created yet."}
         </p>
       )}
