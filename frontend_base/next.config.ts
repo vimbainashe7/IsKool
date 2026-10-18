@@ -1,10 +1,12 @@
 import type { NextConfig } from "next"
+import path from "node:path"
 
 const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "@radix-ui/react-icons"],
   },
-  turbopack: {},
+  // npm backend and pnpm frontend have separate dependency roots.
+  turbopack: { root: path.resolve(__dirname) },
 
   // Image optimization
   images: {

@@ -4,7 +4,14 @@ export const defaultSamsBaseUrl = process.env.SAMS_BASE_URL ?? 'http://127.0.0.1
 export const defaultApsBaseUrl = process.env.APS_BASE_URL ?? 'http://127.0.0.1:3001/api/v1';
 
 export function prismaClientGenerated() {
-  return existsSync('node_modules/@prisma/client/index.js');
+  return existsSync('node_modules/.prisma/client/index.js');
+}
+
+export function samePrismaSchema(left, right) {
+  // Prisma aligns fields while generating. Compare tokens, preserving spaces
+  // inside quoted defaults rather than treating formatting as stale generation.
+  const tokens = (source) => source.match(/"(?:\\.|[^"\\])*"|[^\s"]+/g)?.join('\0');
+  return tokens(left) === tokens(right);
 }
 
 export function assertPrismaClientGenerated() {
@@ -13,11 +20,12 @@ export function assertPrismaClientGenerated() {
   }
 }
 
-export async function healthCheck(label, baseUrl, timeoutMs = 1500) {
-  const url = `${baseUrl}/health/live`;
+export async function healthCheck(label, baseUrl, timeoutMs = 5000) {
+  const url = `${baseUrl}/health/ready`;
   try {
     const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
-    return { label, url, ok: response.ok, status: response.status };
+    const body = await response.json();
+    return { label, url, ok: response.ok && body.status === 'ok' && body.dependencies?.database === 'ok' && ['ok', 'disabled'].includes(body.dependencies?.redis), status: response.status };
   } catch (error) {
     return {
       label,

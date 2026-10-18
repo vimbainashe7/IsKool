@@ -1,8 +1,11 @@
 import { LoginForm1 } from "./components/login-form-1"
 import { Logo } from "@/components/logo"
 import Link from "next/link"
+import { headers } from "next/headers"
+import { developmentAccountsEnabled } from "@/lib/auth/development-accounts"
 
-export default function Page() {
+export default async function Page() {
+  const developmentAccounts = developmentAccountsEnabled(await headers())
   return (
     <div className="iskool-surface flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
       <div className="grid w-full max-w-5xl overflow-hidden rounded-[28px] border border-iskool-cream bg-white/85 shadow-[0_28px_80px_rgba(4,9,61,0.14)] md:grid-cols-[1fr_420px]">
@@ -46,7 +49,7 @@ export default function Page() {
             </div>
             IsKool
           </Link>
-          <LoginForm1 />
+          <LoginForm1 developmentAccounts={developmentAccounts} />
         </div>
       </div>
     </div>

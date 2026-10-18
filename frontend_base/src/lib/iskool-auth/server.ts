@@ -56,10 +56,15 @@ export class IsKoolAuthError extends Error {
 }
 
 async function requestJson(url: string, init: RequestInit) {
+  const localDevelopment = process.env.NODE_ENV === "development" &&
+    process.env.ISKOOL_DEV_LOOPBACK === "127.0.0.1" &&
+    /^http:\/\/127\.0\.0\.1:300[12]\/api\/v1\//.test(url)
   const response = await fetch(url, {
     ...init,
     cache: "no-store",
-    signal: AbortSignal.timeout(10_000),
+    // Hosted development can exceed 10s under Windows memory pressure. Keep a
+    // bounded local budget aligned with the development refresh transaction.
+    signal: AbortSignal.timeout(localDevelopment ? 30_000 : 10_000),
     headers: { "content-type": "application/json", ...init.headers },
   })
   const body = await response.json().catch(() => null)

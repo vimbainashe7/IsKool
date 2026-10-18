@@ -10,7 +10,9 @@ export default defineConfig({
   workers: 1,
   timeout: 60000,
   expect: { timeout: 15000 },
-  reporter: [["list"], ["html", { open: "never" }]],
+  reporter: process.env.ISKOOL_LIVE_AUTH === "true"
+    ? [["./tests/live-auth-redaction-reporter.ts"], ["list"], ["html", { open: "never" }]]
+    : [["list"], ["html", { open: "never" }]],
   use: {
     baseURL,
     trace: "retain-on-failure",
@@ -25,8 +27,8 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
     env: {
-      ISKOOL_ENABLE_DEMO: "true",
-      NEXT_PUBLIC_ISKOOL_DEMO: "true",
+      ISKOOL_ENABLE_DEMO: process.env.ISKOOL_LIVE_AUTH === "true" ? "false" : "true",
+      NEXT_PUBLIC_ISKOOL_DEMO: process.env.ISKOOL_LIVE_AUTH === "true" ? "false" : "true",
       NEXT_PUBLIC_SUPABASE_URL: "",
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "",

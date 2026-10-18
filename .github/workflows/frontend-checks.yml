@@ -23,6 +23,8 @@ jobs:
         working-directory: frontend_base
       - run: pnpm build
         working-directory: frontend_base
+      - run: pnpm test:production-accounts
+        working-directory: frontend_base
       - run: pnpm check:secrets
         working-directory: frontend_base
       - run: pnpm exec playwright install --with-deps chromium
