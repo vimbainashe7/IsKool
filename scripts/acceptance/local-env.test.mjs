@@ -35,3 +35,8 @@ test('ambiguous duplicate configuration fails without exposing values', () => {
     assert.throws(() => readLocalEnv([file], {}), /Duplicate ISKOOL_ENABLE_DEMO/);
   } finally { assert.equal(dirname(resolve(directory)), resolve(tmpdir())); rmSync(directory, { recursive: true }); }
 });
+
+test('generated Prisma punctuation spacing is accepted without merging field tokens', () => {
+  assert.equal(samePrismaSchema('model Student { id String @id @@unique([id,schoolId]) }', 'model Student { id String @id @@unique([id, schoolId]) }'), true);
+  assert.equal(samePrismaSchema('field String', 'fieldString'), false);
+});
