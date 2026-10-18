@@ -130,7 +130,7 @@ export function StudentAdministration({ studentId }: { studentId?: string }) {
                 <AdminListRow
                   key={s.id}
                   title={`${s.givenName} ${s.familyName}`}
-                  detail={`${s.admissionNumber} � ${s.status}`}
+                  detail={`${s.admissionNumber} | ${s.status}`}
                 >
                   <Link className="underline" href={`/admin/students/${s.id}`}>
                     Open record
@@ -216,7 +216,7 @@ export function StudentAdministration({ studentId }: { studentId?: string }) {
       {feedback}
       <AdminSectionCard
         title={`${student.givenName} ${student.familyName}`}
-        description={`${student.admissionNumber} � ${student.status}`}
+        description={`${student.admissionNumber} | ${student.status}`}
       >
         <form
           key={student.version}
@@ -281,7 +281,7 @@ export function StudentAdministration({ studentId }: { studentId?: string }) {
               <AdminListRow
                 key={link.guardianId}
                 title={link.guardian.fullName}
-                detail={`${link.relationship} � ${link.guardian.email} � ${link.guardian.phone ?? "No phone"}`}
+                detail={`${link.relationship} | ${link.guardian.email} | ${link.guardian.phone ?? "No phone"}`}
               />
             ))}
           </ul>
@@ -306,7 +306,7 @@ export function StudentAdministration({ studentId }: { studentId?: string }) {
           <SelectField name="guardianId" label="Existing guardian">
             {guardians.map((g) => (
               <option key={g.id} value={g.id}>
-                {g.fullName} � {g.email}
+                {g.fullName} | {g.email}
               </option>
             ))}
           </SelectField>
@@ -391,7 +391,7 @@ export function StudentAdministration({ studentId }: { studentId?: string }) {
             {student.enrollments.map((e) => (
               <li key={e.id} className="space-y-3 rounded-xl border p-4">
                 <p className="font-medium">
-                  {e.schoolClass.name} � {e.term.label} �{" "}
+                  {e.schoolClass.name} | {e.term.label} |{" "}
                   <span data-testid={`enrollment-${e.id}-status`}>
                     {e.status}
                   </span>
@@ -399,7 +399,7 @@ export function StudentAdministration({ studentId }: { studentId?: string }) {
                 <p className="text-sm text-muted-foreground">
                   Enrolled {new Date(e.enrolledAt).toLocaleDateString("en-ZW")}
                   {e.endedAt
-                    ? ` � Ended ${new Date(e.endedAt).toLocaleDateString("en-ZW")}`
+                    ? ` | Ended ${new Date(e.endedAt).toLocaleDateString("en-ZW")}`
                     : ""}
                 </p>
                 {["pending", "active"].includes(e.status) && (
@@ -465,7 +465,7 @@ export function StudentAdministration({ studentId }: { studentId?: string }) {
           <SelectField name="classId" label="Class">
             {references.classes.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name} �{" "}
+                {c.name} |{" "}
                 {references.years.find((y) => y.id === c.academicYearId)?.label}
               </option>
             ))}
@@ -473,7 +473,7 @@ export function StudentAdministration({ studentId }: { studentId?: string }) {
           <SelectField name="academicTermId" label="Academic term">
             {references.terms.map((t) => (
               <option key={t.id} value={t.id}>
-                {t.label} �{" "}
+                {t.label} |{" "}
                 {references.years.find((y) => y.id === t.academicYearId)?.label}
               </option>
             ))}

@@ -61,7 +61,7 @@
     "dev:frontend": "node scripts/acceptance/dev-iskool.mjs --frontend",
     "dev:check": "node scripts/acceptance/dev-iskool.mjs --check",
     "check:secrets": "node scripts/acceptance/check-secrets.mjs",
-    "test:dev": "node --test scripts/acceptance/local-env.test.mjs"
+    "test:dev": "node --test scripts/acceptance/local-env.test.mjs scripts/acceptance/readiness.test.mjs"
   },
   "devDependencies": {
     "supabase": "^2.119.0"

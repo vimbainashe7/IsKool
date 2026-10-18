@@ -6,6 +6,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { createConnection } from 'node:net';
 import { readLocalEnv } from './helpers/local-env.mjs';
 import { samePrismaSchema } from './helpers/preflight.mjs';
+import { backendIsLive } from './helpers/readiness.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 // Prisma may load the env path recorded by the last generated client. Keep each
@@ -216,9 +217,17 @@ try {
       probing = true;
       try {
         for (const service of services) {
-          service.failures = await healthy(service) ? 0 : (service.failures ?? 0) + 1;
-          if (service.failures) console.error(`${service.kind}: readiness failed (${service.failures}/3); checking again.`);
-          if (service.failures >= 3) { console.error(`${service.kind} lost readiness.`); clearInterval(monitor); stop(1); break; }
+          const previousFailures = service.failures ?? 0;
+          service.failures = await healthy(service) ? 0 : previousFailures + 1;
+          if (!service.failures && previousFailures) console.log(`RECOVERED ${service.kind}: readiness verified again.`);
+          if (service.failures) console.error(`${service.kind}: readiness failed (${service.failures} consecutive probes); checking again.`);
+          if (service.failures >= 3) {
+            if (await backendIsLive(service)) {
+              console.error(`DEGRADED ${service.kind}: API is live but dependencies are not ready. Requests may fail; services remain running while readiness is retried.`);
+            } else {
+              console.error(`${service.kind} lost readiness and liveness.`); clearInterval(monitor); stop(1); break;
+            }
+          }
         }
       } finally { probing = false; }
     }, 15000);
