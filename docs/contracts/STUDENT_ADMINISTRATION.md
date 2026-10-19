@@ -6,6 +6,8 @@ All routes below are under `/api/v1`, require a SAMS bearer token, revalidate th
 
 | Method | Route | Behavior |
 | --- | --- | --- |
+| GET | `/student-administration/summary` | School-scoped aggregate student total, active student total, distinct actively enrolled students, active enrollment rows, active students without active enrollment, and all school classes. Counts span all academic terms/years. One SQL snapshot under runtime RLS; no membership/account inference. |
+| GET | `/student-administration/enrollments?limit=25&cursor=UUID` | Enrollment history with student, class and term; stable UUID keyset pagination using the existing validated limit (max 50). School comes from principal. |
 | GET / POST | `/students` | Keyset list (default 25, maximum 50) / create student with normalized unique admission number |
 | GET / PATCH | `/students/:id` | School-scoped detail / allowed names and archival status; expected `version` required |
 | GET / POST | `/guardians` | Bounded keyset list / create unique school/email contact |

@@ -9,7 +9,7 @@ const uuid =
   "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
 const routes: Record<string, RegExp> = {
   GET: new RegExp(
-    `^(students(?:/${uuid})?|guardians|student-administration/context)$`
+    `^(students(?:/${uuid})?|guardians|student-administration/(?:context|summary|enrollments))$`
   ),
   POST: new RegExp(
     `^(students(?:/${uuid}/(?:guardians|enrollments))?|guardians|student-administration/(?:academic-years|academic-terms|classes))$`

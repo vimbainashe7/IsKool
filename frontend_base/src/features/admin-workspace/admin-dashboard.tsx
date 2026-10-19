@@ -14,6 +14,7 @@ import {
   AdminMetricCard,
   AdminEmptyState,
   AdminLink,
+  AdminRetry,
   useAdminAccess,
 } from "./admin-components"
 import { adminModel, schoolDate } from "./model"
@@ -79,25 +80,25 @@ export function AdmissionsPipelineCard() {
       >
         Application stages and conversion are unavailable.
       </AdminEmptyState>
-      {m.peopleAvailable && (
+      {m.studentTotals && (
         <>
           <p className={styles.note}>
-            Current enrollment · active student memberships
+            Current enrollment · active student records
           </p>
           <div className={styles.snapshot}>
             <div className={styles.snapshotTotal}>
-              <strong>{m.activeStudents.length}</strong>
+              <strong>{m.studentTotals.activeStudents}</strong>
               <span>active students</span>
             </div>
             <div className={styles.bars}>
               {[
                 {
                   label: "Enrolled in a class",
-                  value: m.enrolledStudents.length,
+                  value: m.studentTotals.enrolledStudents,
                 },
                 {
                   label: "Without a class",
-                  value: m.studentsWithoutClass.length,
+                  value: m.studentTotals.withoutClass,
                 },
               ].map((s, i) => (
                 <div key={s.label}>
@@ -111,7 +112,7 @@ export function AdmissionsPipelineCard() {
                   >
                     <span
                       style={{
-                        width: `${m.activeStudents.length ? (s.value / m.activeStudents.length) * 100 : 0}%`,
+                        width: `${m.studentTotals?.activeStudents ? (s.value / m.studentTotals.activeStudents) * 100 : 0}%`,
                       }}
                     />
                   </div>
@@ -312,10 +313,10 @@ export function AdminDashboard({
       <div className={styles.metrics} aria-label="School summary">
         <AdminMetricCard
           label="Students"
-          value={m.peopleAvailable ? m.students.length : null}
+          value={m.studentTotals?.students ?? null}
           detail={
-            m.peopleAvailable
-              ? `${m.activeStudents.length} active memberships`
+            m.studentTotals
+              ? `${m.studentTotals.activeStudents} active student records`
               : "Student records could not be loaded"
           }
           icon={Users}
@@ -324,7 +325,7 @@ export function AdminDashboard({
         />
         <AdminMetricCard
           label="Enrolled Students"
-          value={m.peopleAvailable ? m.enrolledStudents.length : null}
+          value={m.studentTotals?.enrolledStudents ?? null}
           detail="Active students in at least one class"
           icon={UserRoundCheck}
           href="/admin/enrollments"
@@ -352,6 +353,7 @@ export function AdminDashboard({
         />
       </div>
       <AdminAttention />
+      {data.mode === "live" && <AdminRetry />}
       <div className={styles.operations}>
         <AdmissionsPipelineCard />
         <UpcomingEventsCard />

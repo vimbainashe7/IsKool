@@ -70,6 +70,11 @@ test.describe("live SAMS student administration", () => {
     test.setTimeout(600_000)
     const suffix = Date.now().toString()
     await signIn(page, "Admin")
+    const baselineResponse = await page.request.get(
+      "/api/sams/student-administration/summary"
+    )
+    expect(baselineResponse.status()).toBe(200)
+    const baseline = await baselineResponse.json()
     await page.goto("/admin/students")
     await expect(
       page.getByRole("heading", { name: "School student records", exact: true })
@@ -121,7 +126,9 @@ test.describe("live SAMS student administration", () => {
     const row = page.getByRole("listitem").filter({ hasText: admissionNumber })
     await expect(row).toBeVisible()
     await row.getByRole("link", { name: "Open record", exact: true }).click()
-    await expect(page).toHaveURL(new RegExp(`/admin/students/${student.id}$`), { timeout: 120_000 })
+    await expect(page).toHaveURL(new RegExp(`/admin/students/${student.id}$`), {
+      timeout: 120_000,
+    })
     await expect(
       page.getByRole("heading", { name: "Guardians", exact: true })
     ).toBeVisible({ timeout: 120_000 })
@@ -198,6 +205,14 @@ test.describe("live SAMS student administration", () => {
     await expect(
       page.getByTestId(`enrollment-${enrollment.id}-status`)
     ).toHaveText("withdrawn", { timeout: 120_000 })
+    const withdrawnSummary = await page.request.get(
+      "/api/sams/student-administration/summary"
+    )
+    expect(withdrawnSummary.status()).toBe(200)
+    const withdrawnTotals = await withdrawnSummary.json()
+    expect(withdrawnTotals.students).toBe(baseline.students + 1)
+    expect(withdrawnTotals.enrolledStudents).toBe(baseline.enrolledStudents)
+    expect(withdrawnTotals.activeEnrollments).toBe(baseline.activeEnrollments)
     const headers = { origin: new URL(page.url()).origin }
     const revival = await page.request.patch(
       `/api/sams/student-administration/enrollments/${enrollment.id}`,
@@ -211,13 +226,77 @@ test.describe("live SAMS student administration", () => {
     expect(stale.status()).toBe(409)
     // Reentry creates a new row; the withdrawn history must remain intact.
     await page.getByLabel("Class", { exact: true }).selectOption(schoolClass.id)
-    await page.getByLabel("Academic term", { exact: true }).selectOption(term.id)
-    await page.getByLabel("Enrollment status", { exact: true }).selectOption("active")
-    const reentry = await save(page, "Enroll student", `students/${student.id}/enrollments`)
+    await page
+      .getByLabel("Academic term", { exact: true })
+      .selectOption(term.id)
+    await page
+      .getByLabel("Enrollment status", { exact: true })
+      .selectOption("active")
+    const reentry = await save(
+      page,
+      "Enroll student",
+      `students/${student.id}/enrollments`
+    )
     expect(reentry.id).not.toBe(enrollment.id)
     await page.reload()
-    await expect(page.getByTestId(`enrollment-${enrollment.id}-status`)).toHaveText("withdrawn", { timeout: 120_000 })
-    await expect(page.getByTestId(`enrollment-${reentry.id}-status`)).toHaveText("active", { timeout: 120_000 })
+    await expect(
+      page.getByTestId(`enrollment-${enrollment.id}-status`)
+    ).toHaveText("withdrawn", { timeout: 120_000 })
+    await expect(
+      page.getByTestId(`enrollment-${reentry.id}-status`)
+    ).toHaveText("active", { timeout: 120_000 })
+    const totalsResponse = await page.request.get(
+      "/api/sams/student-administration/summary"
+    )
+    expect(totalsResponse.status()).toBe(200)
+    const totals = await totalsResponse.json()
+    expect(totals.students).toBe(baseline.students + 1)
+    expect(totals.activeStudents).toBe(baseline.activeStudents + 1)
+    expect(totals.enrolledStudents).toBe(baseline.enrolledStudents + 1)
+    expect(totals.activeEnrollments).toBe(baseline.activeEnrollments + 1)
+    expect(totals.classes).toBe(baseline.classes + 1)
+    await page.goto("/admin/dashboard")
+    await page.reload()
+    await expect(
+      page.locator('[data-testid="metric-Students"] strong')
+    ).toHaveText(String(totals.students), { timeout: 120_000 })
+    await expect(
+      page.locator('[data-testid="metric-Enrolled Students"] strong')
+    ).toHaveText(String(totals.enrolledStudents))
+    await expect(
+      page.locator('[data-testid="metric-Teachers"] strong')
+    ).toHaveText("Unavailable")
+    await page.goto("/admin/enrollments")
+    await expect(
+      page.locator('[data-testid="metric-Enrolled Students"] strong')
+    ).toHaveText(String(totals.enrolledStudents), { timeout: 120_000 })
+    await expect(
+      page.locator('[data-testid="metric-Class Enrollments"] strong')
+    ).toHaveText(String(totals.activeEnrollments))
+    const enrollmentLink = page.getByRole("link", {
+      name: `${updatedName} Learner ${suffix}`,
+      exact: true,
+    })
+    for (
+      let pages = 0;
+      !(await enrollmentLink.count()) && pages < 20;
+      pages++
+    ) {
+      const next = page.getByRole("button", {
+        name: "Next enrollment page",
+        exact: true,
+      })
+      if (!(await next.isVisible())) break
+      await next.click()
+      await expect(
+        page.getByText("Loading enrollment records…", { exact: true })
+      ).toBeHidden({ timeout: 90_000 })
+    }
+    await expect(enrollmentLink.first()).toBeVisible({ timeout: 90_000 })
+    await page.goto(`/admin/students/${student.id}`)
+    await expect(
+      page.getByTestId(`enrollment-${reentry.id}-status`)
+    ).toHaveText("active", { timeout: 120_000 })
     await page.screenshot({
       path: info.outputPath("student-detail-persisted.png"),
       fullPage: true,
@@ -262,6 +341,17 @@ test.describe("live SAMS student administration", () => {
     const beta = await betaLogin.json()
     const betaHeaders = { authorization: `Bearer ${beta.accessTokens.sams}` }
     try {
+      const betaSummaryBefore = await page.request.get(
+        "http://127.0.0.1:3002/api/v1/student-administration/summary",
+        { headers: betaHeaders }
+      )
+      expect(betaSummaryBefore.status()).toBe(200)
+      const betaTotals = await betaSummaryBefore.json()
+      const alphaSummaryBefore = await page.request.get(
+        "/api/sams/student-administration/summary"
+      )
+      expect(alphaSummaryBefore.status()).toBe(200)
+      const alphaTotals = await alphaSummaryBefore.json()
       const betaCreate = await page.request.post(
         "http://127.0.0.1:3002/api/v1/students",
         {
@@ -274,6 +364,22 @@ test.describe("live SAMS student administration", () => {
         }
       )
       expect(betaCreate.status()).toBe(201)
+      const betaAfter = await page.request.get(
+        "http://127.0.0.1:3002/api/v1/student-administration/summary",
+        { headers: betaHeaders }
+      )
+      expect((await betaAfter.json()).students).toBe(betaTotals.students + 1)
+      const alphaAfter = await page.request.get(
+        "/api/sams/student-administration/summary"
+      )
+      expect((await alphaAfter.json()).students).toBe(alphaTotals.students)
+      const betaEnrollments = await page.request.get(
+        "http://127.0.0.1:3002/api/v1/student-administration/enrollments",
+        { headers: betaHeaders }
+      )
+      expect(betaEnrollments.status()).toBe(200)
+      for (const item of (await betaEnrollments.json()).items)
+        expect(item.schoolId).toBe(beta.school.id)
       const student = await betaCreate.json()
       const headers = { origin: new URL(page.url()).origin }
       expect(
@@ -297,6 +403,12 @@ test.describe("live SAMS student administration", () => {
       await signIn(page, role)
       const read = await page.request.get("/api/sams/students")
       expect([401, 403]).toContain(read.status())
+      for (const path of ["summary", "enrollments"]) {
+        const denied = await page.request.get(
+          `/api/sams/student-administration/${path}`
+        )
+        expect([401, 403]).toContain(denied.status())
+      }
       const mutation = await page.request.post("/api/sams/students", {
         headers: { origin: new URL(page.url()).origin },
         data: {

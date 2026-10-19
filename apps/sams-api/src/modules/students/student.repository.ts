@@ -24,6 +24,27 @@ export class StudentRepository {
     return tx.student.findMany({ where: { schoolId, ...(cursor ? { id: { gt: cursor } } : {}) }, orderBy: { id: 'asc' }, take: limit + 1 });
   }
 
+  async summary(tx: TransactionClient, schoolId: string) {
+    // One statement gives all totals the same PostgreSQL snapshot. RLS still
+    // applies under the restricted runtime role; school comes from principal.
+    const [row] = await tx.$queryRaw<Array<{ students: number; activeStudents: number; enrolledStudents: number; activeEnrollments: number; classes: number }>>`
+      SELECT
+        (SELECT count(*)::int FROM public.students WHERE school_id=${schoolId}::uuid) AS students,
+        (SELECT count(*)::int FROM public.students WHERE school_id=${schoolId}::uuid AND status='active') AS "activeStudents",
+        (SELECT count(*)::int FROM public.students s WHERE s.school_id=${schoolId}::uuid AND s.status='active'
+          AND EXISTS (SELECT 1 FROM public.enrollments e WHERE e.school_id=s.school_id AND e.student_id=s.id AND e.status='active')) AS "enrolledStudents",
+        (SELECT count(*)::int FROM public.enrollments e JOIN public.students s ON s.id=e.student_id AND s.school_id=e.school_id
+          WHERE e.school_id=${schoolId}::uuid AND e.status='active' AND s.status='active') AS "activeEnrollments",
+        (SELECT count(*)::int FROM public.classes WHERE school_id=${schoolId}::uuid) AS classes`;
+    return { ...row, withoutClass: row.activeStudents - row.enrolledStudents };
+  }
+
+  enrollments(tx: TransactionClient, schoolId: string, limit: number, cursor?: string) {
+    return tx.enrollment.findMany({ where: { schoolId, ...(cursor ? { id: { gt: cursor } } : {}) },
+      orderBy: { id: 'asc' }, take: limit + 1,
+      include: { student: true, schoolClass: true, term: true } });
+  }
+
   detail(tx: TransactionClient, schoolId: string, id: string) {
     return tx.student.findFirst({ where: { id, schoolId }, include: {
       guardians: { include: { guardian: true }, orderBy: { guardianId: 'asc' }, take: 50 },

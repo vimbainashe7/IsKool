@@ -27,6 +27,17 @@ export class StudentService {
     });
   }
 
+  summary(p: AuthPrincipal, r: string) {
+    return this.run(p, r, tx => this.records.summary(tx, p.schoolId));
+  }
+
+  enrollments(p: AuthPrincipal, r: string, query: StudentListDto) {
+    return this.run(p, r, async tx => {
+      const rows = await this.records.enrollments(tx, p.schoolId, query.limit, query.cursor);
+      return { items: rows.slice(0, query.limit), nextCursor: rows.length > query.limit ? rows[query.limit - 1].id : null };
+    });
+  }
+
   detail(p: AuthPrincipal, r: string, id: string) {
     return this.run(p, r, async tx => {
       const student = await this.records.detail(tx, p.schoolId, id);

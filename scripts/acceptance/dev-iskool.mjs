@@ -6,7 +6,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { createConnection } from 'node:net';
 import { readLocalEnv } from './helpers/local-env.mjs';
 import { samePrismaSchema } from './helpers/preflight.mjs';
-import { backendIsLive } from './helpers/readiness.mjs';
+import { backendIsLive, frontendRoutesReady } from './helpers/readiness.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 // Prisma may load the env path recorded by the last generated client. Keep each
@@ -113,7 +113,7 @@ async function healthy(service) {
   try {
     const response = await fetch(service.url, { signal: AbortSignal.timeout(service.kind === 'frontend' ? 30000 : 10000), redirect: 'manual' });
     if (!response.ok) return false;
-    if (service.kind === 'frontend') return (await response.text()).includes('Welcome back');
+    if (service.kind === 'frontend') return (await response.text()).includes('Welcome back') && await frontendRoutesReady(service.url);
     const body = await response.json();
     return body.status === 'ok' && body.dependencies?.database === 'ok' && ['ok', 'disabled'].includes(body.dependencies?.redis);
   } catch { return false; }

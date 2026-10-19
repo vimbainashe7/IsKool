@@ -29,13 +29,14 @@ export function schoolWeekday(instant: string) {
   )
 }
 export function adminModel(w: Workspace) {
-  const peopleAvailable = !w.warnings.some((v) =>
-    /people could not be loaded/i.test(v)
-  )
-  const timetableAvailable = !w.warnings.some((v) =>
-    /timetable.*unavailable/i.test(v)
-  )
-  const auditAvailable = !w.warnings.some((v) => /audit.*unavailable/i.test(v))
+  const peopleAvailable =
+    w.mode !== "live" &&
+    !w.warnings.some((v) => /people could not be loaded/i.test(v))
+  const timetableAvailable =
+    w.mode !== "live" &&
+    !w.warnings.some((v) => /timetable.*unavailable/i.test(v))
+  const auditAvailable =
+    w.mode !== "live" && !w.warnings.some((v) => /audit.*unavailable/i.test(v))
   const members = [...new Map(w.members.map((m) => [m.id, m])).values()]
   const classes = [...new Map(w.classes.map((c) => [c.id, c])).values()]
   const classIds = new Set(classes.map((c) => c.id))
@@ -113,6 +114,19 @@ export function adminModel(w: Workspace) {
     }
   }
   return {
+    studentTotals:
+      w.mode === "live"
+        ? (w.studentSummary ?? null)
+        : {
+            students: students.length,
+            activeStudents: activeStudents.length,
+            enrolledStudents: enrolledStudents.length,
+            activeEnrollments: enrollments.length,
+            withoutClass: activeStudents.filter(
+              (m) => !enrollments.some((e) => e.memberId === m.id)
+            ).length,
+            classes: classes.length,
+          },
     members,
     classes,
     students,

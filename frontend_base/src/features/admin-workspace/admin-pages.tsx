@@ -58,13 +58,13 @@ export function AdminPageMetrics({
     metrics = [
       {
         label: "School Classes",
-        value: m.classes.length,
+        value: m.studentTotals?.classes ?? null,
         detail: "Classes in current school records",
         icon: BookOpen,
       },
       {
         label: "Enrolled Students",
-        value: known(m.enrolledStudents.length),
+        value: m.studentTotals?.enrolledStudents ?? null,
         detail: "Active memberships in a class",
         icon: Users,
       },
@@ -141,26 +141,26 @@ export function AdminPageMetrics({
     metrics = [
       {
         label: "Enrolled Students",
-        value: known(m.enrolledStudents.length),
+        value: m.studentTotals?.enrolledStudents ?? null,
         detail: "Unique active students with a class",
         icon: Users,
       },
       {
         label: "Class Enrollments",
-        value: m.enrollments.length,
-        detail: "Unique student and class links",
+        value: m.studentTotals?.activeEnrollments ?? null,
+        detail: "Active enrollment records across academic terms",
         icon: UserRoundCheck,
       },
       {
         label: "Without a Class",
-        value: known(m.studentsWithoutClass.length),
-        detail: "Active student memberships",
+        value: m.studentTotals?.withoutClass ?? null,
+        detail: "Active student records without active enrollment",
         icon: CircleAlert,
       },
       {
         label: "School Classes",
-        value: m.classes.length,
-        detail: "Available enrollment destinations",
+        value: m.studentTotals?.classes ?? null,
+        detail: "Classes across school academic years",
         icon: BookOpen,
       },
     ]
@@ -168,7 +168,7 @@ export function AdminPageMetrics({
     metrics = [
       {
         label: "Defined Roles",
-        value: 3,
+        value: data.mode === "live" ? null : 3,
         detail: "Student, Teacher and Admin",
         icon: ShieldCheck,
       },

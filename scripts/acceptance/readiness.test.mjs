@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { backendIsLive } from './helpers/readiness.mjs';
+import { backendIsLive, frontendRoutesReady } from './helpers/readiness.mjs';
+
+test('a rendered sign-in page is insufficient when the login route is missing', async () => {
+  for (const status of [404,500,503]) assert.equal(await frontendRoutesReady('http://127.0.0.1:3000/sign-in', async () => ({status})),false);
+  assert.equal(await frontendRoutesReady('http://127.0.0.1:3000/sign-in', async () => ({status:405})),true);
+  assert.equal(await frontendRoutesReady('http://127.0.0.1:3000/sign-in', async () => {throw new Error('offline')}),false);
+});
 
 test('degraded database can coexist with a verified live backend', async () => {
   let requested;

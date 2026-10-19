@@ -28,6 +28,8 @@ export class GuardianController {
 @UseGuards(ServiceAuthGuard)
 export class StudentAdministrationController {
   constructor(private readonly students: StudentService) {}
+  @Get('summary') summary(@CurrentPrincipal() p: AuthPrincipal, @RequestId() r: string) { return this.students.summary(p, r); }
+  @Get('enrollments') enrollments(@CurrentPrincipal() p: AuthPrincipal, @RequestId() r: string, @Query() q: StudentListDto) { return this.students.enrollments(p, r, q); }
   @Get('context') context(@CurrentPrincipal() p: AuthPrincipal, @RequestId() r: string) { return this.students.referenceData(p, r); }
   @Post('academic-years') year(@CurrentPrincipal() p: AuthPrincipal, @RequestId() r: string, @Body() dto: CreateYearDto) { return this.students.createYear(p, r, dto); }
   @Post('academic-terms') term(@CurrentPrincipal() p: AuthPrincipal, @RequestId() r: string, @Body() dto: CreateTermDto) { return this.students.createTerm(p, r, dto); }

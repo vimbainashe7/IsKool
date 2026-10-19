@@ -131,7 +131,7 @@ export function AdminMetricCard({
     </>
   )
   return (
-    <Card className={styles.metric}>
+    <Card className={styles.metric} data-testid={`metric-${label}`}>
       {href && capability && hasCapability(capabilities, capability) ? (
         <AdminLink
           href={href}

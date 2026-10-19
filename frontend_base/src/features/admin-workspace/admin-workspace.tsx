@@ -1,10 +1,19 @@
 "use client"
 import { StudentAdministration } from "@/features/students/student-administration"
+import {
+  EnrollmentOverview,
+  SchoolClassOverview,
+} from "@/features/students/enrollment-overview"
 import { useWorkspace } from "@/features/workspace/workspace-provider"
 import { AdminPeople, AdminClasses } from "@/features/admin/admin-workspace"
 import type { WorkspaceViewKey } from "@/features/workspace/workspace-view"
 import type { Capability } from "@/lib/permissions/capabilities"
-import { AdminAccess, AdminPageHeader, AdminLink } from "./admin-components"
+import {
+  AdminAccess,
+  AdminPageHeader,
+  AdminLink,
+  AdminSectionCard,
+} from "./admin-components"
 import { AdminDashboard } from "./admin-dashboard"
 import {
   AdminPageMetrics,
@@ -50,7 +59,25 @@ export function AdminWorkspace({
   const { data: workspace } = useWorkspace()
   const liveStudents = view === "students" && workspace.mode === "live"
   let content
-  if (liveStudents) content = <StudentAdministration key={resourceId ?? "list"} studentId={resourceId} />
+  if (liveStudents)
+    content = (
+      <StudentAdministration
+        key={resourceId ?? "list"}
+        studentId={resourceId}
+      />
+    )
+  else if (
+    workspace.mode === "live" &&
+    ["users", "teachers", "roles", "class", "audit", "timetable"].includes(view)
+  )
+    content = (
+      <AdminSectionCard title="Records unavailable">
+        <p>
+          This school workflow is not connected yet. No records or totals are
+          inferred from missing data.
+        </p>
+      </AdminSectionCard>
+    )
   else if (["users", "students", "teachers", "roles"].includes(view))
     content = (
       <>
@@ -62,7 +89,16 @@ export function AdminWorkspace({
         />
       </>
     )
-  else if (view === "admin-classes") content = <AdminClasses />
+  else if (view === "admin-classes")
+    content =
+      workspace.mode === "live" ? <SchoolClassOverview /> : <AdminClasses />
+  else if (view === "enrollments" && workspace.mode === "live")
+    content = (
+      <>
+        <AdmissionsPipelineCard />
+        <EnrollmentOverview />
+      </>
+    )
   else if (view === "enrollments")
     content = (
       <>
@@ -108,7 +144,11 @@ export function AdminWorkspace({
                 </AdminLink>
               ) : view === "admin-classes" ? (
                 <AdminLink
-                  href="#create-class"
+                  href={
+                    workspace.mode === "live"
+                      ? "/admin/students"
+                      : "#create-class"
+                  }
                   capability="classes.manage"
                   className={styles.headerAction}
                 >
@@ -116,7 +156,11 @@ export function AdminWorkspace({
                 </AdminLink>
               ) : view === "enrollments" ? (
                 <AdminLink
-                  href="#assign-teacher"
+                  href={
+                    workspace.mode === "live"
+                      ? "/admin/students"
+                      : "#assign-teacher"
+                  }
                   capability="enrollments.manage"
                   className={styles.headerAction}
                 >

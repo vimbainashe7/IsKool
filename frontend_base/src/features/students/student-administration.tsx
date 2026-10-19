@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Field, SelectField, formValues } from "./form-fields"
@@ -27,6 +28,7 @@ import {
 import { AcademicSetup } from "./academic-setup"
 
 export function StudentAdministration({ studentId }: { studentId?: string }) {
+  const router = useRouter()
   const [students, setStudents] = useState<Student[] | null>(null)
   const [student, setStudent] = useState<StudentDetail | null>(null)
   const [references, setReferences] = useState<References | null>(null)
@@ -79,6 +81,9 @@ export function StudentAdministration({ studentId }: { studentId?: string }) {
     try {
       await work()
       setMessage(success)
+      // Invalidate prefetched route payloads so dashboard navigation observes
+      // the committed student/enrollment state as well as a full reload.
+      router.refresh()
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "The change could not be saved."
