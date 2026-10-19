@@ -1,6 +1,8 @@
 BEGIN;
 SELECT set_config('iskool.user_id','a2000000-0000-4000-8000-000000000001',true),set_config('iskool.membership_id','a3000000-0000-4000-8000-000000000001',true),set_config('iskool.school_id','a1000000-0000-4000-8000-000000000001',true);
 DO $$ DECLARE changed integer; BEGIN
+ IF NOT EXISTS (SELECT 1 FROM pg_class WHERE oid='public.roles'::regclass AND relrowsecurity AND relforcerowsecurity) THEN RAISE EXCEPTION 'Role catalogue must enforce RLS like hosted development'; END IF;
+ IF (SELECT count(*) FROM public.roles)<>1 OR NOT EXISTS (SELECT 1 FROM public.roles WHERE key='admin') THEN RAISE EXCEPTION 'Only the current membership role should be visible'; END IF;
  IF NOT iskool.can_manage_school_settings('a1000000-0000-4000-8000-000000000001') OR iskool.can_manage_school_settings('a1000000-0000-4000-8000-000000000002') THEN RAISE EXCEPTION 'School settings context invalid'; END IF;
  UPDATE public.schools SET name='Updated School',branding_version=branding_version+1 WHERE id='a1000000-0000-4000-8000-000000000001' AND branding_version=1;
  GET DIAGNOSTICS changed=ROW_COUNT; IF changed<>1 THEN RAISE EXCEPTION 'Own school update failed'; END IF;
@@ -26,6 +28,7 @@ DO $$ DECLARE actor integer; changed integer; BEGIN
  FOR actor IN 2..4 LOOP
   PERFORM set_config('iskool.user_id','a2000000-0000-4000-8000-'||lpad(actor::text,12,'0'),true),set_config('iskool.membership_id','a3000000-0000-4000-8000-'||lpad(actor::text,12,'0'),true),set_config('iskool.school_id','a1000000-0000-4000-8000-000000000001',true);
   IF iskool.can_manage_school_settings('a1000000-0000-4000-8000-000000000001') THEN RAISE EXCEPTION 'Non-Admin settings authority'; END IF;
+  IF (SELECT count(*) FROM public.roles)<>1 OR EXISTS (SELECT 1 FROM public.roles WHERE key='admin') THEN RAISE EXCEPTION 'Foreign role catalogue rows leaked'; END IF;
   UPDATE public.schools SET name='Denied',branding_version=branding_version+1 WHERE id='a1000000-0000-4000-8000-000000000001';
   GET DIAGNOSTICS changed=ROW_COUNT; IF changed<>0 THEN RAISE EXCEPTION 'Non-Admin school write succeeded'; END IF;
   UPDATE public.users SET display_name='Denied',profile_version=profile_version+1 WHERE id=iskool.current_user_id();

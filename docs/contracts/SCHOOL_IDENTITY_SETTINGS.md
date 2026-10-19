@@ -2,6 +2,8 @@
 
 SAMS owns these writes to existing shared identity records. The current user and school come from the validated session. Bodies cannot select another school/user or change roles, email, passwords or school status.
 
+Role-catalogue authorization uses forced RLS on `roles`: SAMS can read only keys assigned to its current active membership. The forward lookup migration makes fresh replay match hosted RLS behavior; school/profile predicates remain security invoker functions.
+
 | Method | SAMS route under `/api/v1` | Input/output |
 | --- | --- | --- |
 | GET | `/school-settings` | `{school:{id,name,logoPresent,brandingVersion},user:{id,displayName,profileVersion}}` |

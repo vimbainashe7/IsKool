@@ -10,6 +10,8 @@ Implemented at this checkpoint: additive identity columns and version/format con
 
 Local frontend 137 tests, SAMS 80 tests and APS 19 tests passed. Final CI/hosted development/browser evidence belongs to the focused PR verification discussion; pending at this checkpoint. Human acceptance and release are not claimed. See `docs/contracts/SCHOOL_IDENTITY_SETTINGS.md` and `docs/acceptance/VIM-71.md`. Owner-prioritized branding precedes the next VIM-52 authorized class-context milestone; it does not mark broader VIM-59/64 domains Done.
 
+Live acceptance at c4654e9 caught a real hosted-policy mismatch: `roles` enforced RLS in development, while fresh replay had left it disabled. The invoker-based Admin predicate therefore could not see its role and rejected a fresh profile save with 409. Reproduced on a disposable database with role-catalogue RLS enabled. Forward migration `20261019145200_school_settings_role_lookup.sql` explicitly enables/forces catalogue RLS and allows SAMS to read only its active membership's assigned role keys. No security-definer bypass or broad role catalogue grant was added. Regression SQL requires catalogue RLS and verifies Admin/Registrar/Teacher/Student see only their own role; exact-head CI and live retest evidence follows on PR #7.
+
 ## Current capability and gate
 
 | Issue | Capability | Dependencies | Implementation | Frontend | Migrations | Verification | GitHub | Human acceptance | Blockers |
