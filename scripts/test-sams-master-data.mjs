@@ -36,6 +36,8 @@ sql("UPDATE public.memberships SET status='active' WHERE id='a3000000-0000-4000-
 console.log('PASS disabled Admin cannot mutate school settings');
 sql("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='iskool_master_aps_test') THEN CREATE ROLE iskool_master_aps_test LOGIN INHERIT NOSUPERUSER NOBYPASSRLS; END IF; END; $$; GRANT iskool_aps_runtime TO iskool_master_aps_test;");
 sql(`ALTER ROLE iskool_master_aps_test PASSWORD '${runtimePassword}';`);
+sql(`BEGIN; SELECT set_config('iskool.user_id','a2000000-0000-4000-8000-000000000003',true),set_config('iskool.membership_id','a3000000-0000-4000-8000-000000000003',true),set_config('iskool.school_id','a1000000-0000-4000-8000-000000000001',true); DO $$ BEGIN IF (SELECT count(*) FROM public.roles)<>1 OR NOT EXISTS(SELECT 1 FROM public.membership_roles mr JOIN public.roles r ON r.id=mr.role_id WHERE r.key='teacher') THEN RAISE EXCEPTION 'APS current-membership role lookup failed'; END IF; END; $$; ROLLBACK; DO $$ BEGIN IF EXISTS(SELECT 1 FROM public.roles) THEN RAISE EXCEPTION 'APS role catalogue leaked without principal'; END IF; END; $$;`, 'iskool_master_aps_test');
+console.log('PASS APS current-membership role lookup and missing-principal role denial');
 const aps = sql('SELECT id FROM public.students;', 'iskool_master_aps_test', true);
 if (aps.status === 0 || !aps.stderr.includes('permission denied')) throw new Error('APS must not have direct master-data access');
 console.log('PASS APS direct student-table access denied');

@@ -2,7 +2,7 @@
 
 SAMS owns these writes to existing shared identity records. The current user and school come from the validated session. Bodies cannot select another school/user or change roles, email, passwords or school status.
 
-Role-catalogue authorization uses forced RLS on `roles`: SAMS can read only keys assigned to its current active membership. The forward lookup migration makes fresh replay match hosted RLS behavior; school/profile predicates remain security invoker functions.
+Role-catalogue authorization uses forced RLS on `roles`: SAMS and APS can read only keys assigned to their current active membership, preserving the existing shared-identity read contract. The forward lookup migrations make fresh replay match hosted RLS behavior; school/profile predicates remain security invoker functions. APS receives no school/profile write rights or student-table access.
 
 | Method | SAMS route under `/api/v1` | Input/output |
 | --- | --- | --- |
