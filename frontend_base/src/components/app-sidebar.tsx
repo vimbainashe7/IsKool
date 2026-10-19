@@ -1,6 +1,7 @@
 "use client"
 import type { ComponentProps } from "react"
 import Link from "next/link"
+import { SchoolLogo } from "@/components/school-logo"
 import { navigationFor } from "@/config/app"
 import { NavMain } from "@/components/nav-main"
 import {
@@ -24,15 +25,12 @@ export function AppSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton asChild size="lg">
               <Link href="/home">
-                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
-                  I
-                </span>
-                <span>
-                  <strong>IsKool</strong>
-                  <span className="block max-w-44 truncate text-xs">
-                    {context.school.name}
-                  </span>
-                </span>
+                <SchoolLogo
+                  school={context.school}
+                  inverse
+                  markClassName="size-8"
+                  className="min-w-0"
+                />
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

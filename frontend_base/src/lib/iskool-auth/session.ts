@@ -22,7 +22,11 @@ export function toSessionContract(
     status: "iskool",
     context: {
       user: { id: source.user.id, name: source.user.displayName },
-      school: { id: source.school.id, name: source.school.name },
+      school: {
+        id: source.school.id,
+        name: source.school.name,
+        ...(source.school.logoUrl ? { logoUrl: source.school.logoUrl } : {}),
+      },
       membershipId: source.membershipId,
       roles,
       activeRole,

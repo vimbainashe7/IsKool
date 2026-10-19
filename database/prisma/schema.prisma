@@ -8,6 +8,9 @@ datasource db {
 }
 
 model School {
+  logoDataUrl String? @map("logo_data_url")
+  logoPresent Boolean @default(false) @map("logo_present")
+  brandingVersion Int @default(1) @map("branding_version")
   id          String       @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
   name        String
   status      String       @default("active")
@@ -24,6 +27,7 @@ model School {
 }
 
 model User {
+  profileVersion Int @default(1) @map("profile_version")
   id              String           @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
   email           String
   emailNormalized String           @map("email_normalized")

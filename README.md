@@ -132,6 +132,14 @@ To verify updates: Admin → Students → create a student → open its record �
 
 Teacher/account administration, teaching assignments, academic work, timetable, attendance and finance projections remain future domain work. Their live views must show Unavailable instead of sample rows or inferred zero totals. A failed SAMS request also displays unavailable with retry; it is never presented as an empty school.
 
+### School identity and white-label settings
+
+Admin → Settings → Account provides **Save my name**, **Save school name**, and **Save/Replace/Remove school logo**. These persist through SAMS/PostgreSQL and feed the authenticated sidebar, header, footer, profile name and browser title/favicon across roles after navigation/reload. Other schools keep their own identity. Teacher/Student sessions display branding without Admin mutation rights.
+
+Logos must be PNG/JPEG/WebP, at most 2 MB and 4096×4096 pixels. The server validates/decodes, resizes and re-encodes a small WebP, removes metadata and serves it only to authenticated school members. Removing a logo retains school/account records. Email, credentials, roles, school creation/deletion and tenant-domain routing are separate workflows.
+
+Follow the [VIM-71 walkthrough](docs/acceptance/VIM-71.md). `npm run smoke:vim-71` verifies dedicated branding fixtures; it never seeds, migrates or renames the owner's school. Apply reviewed development migrations before restarting services; never reset a hosted database for testing.
+
 ### Full acceptance
 
 Backend, from the root with Node 22 first on PATH:

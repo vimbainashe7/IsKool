@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Header, HttpCode, Post, StreamableFile, UseGuards } from '@nestjs/common';
 import { AuthPrincipal } from '@aps-sams/auth';
 import { AuthService } from './auth.service';
 import { CurrentPrincipal } from './current-principal.decorator';
@@ -9,6 +9,12 @@ import { ServiceAuthGuard } from './service-auth.guard';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+  @Get('school-logo')
+  @Header('Cache-Control','private, no-store')
+  @UseGuards(ServiceAuthGuard)
+  async schoolLogo(@CurrentPrincipal() principal: AuthPrincipal) {
+    return new StreamableFile(await this.authService.schoolLogo(principal),{type:'image/webp'});
+  }
 
   @Post('login')
   login(@Body() body: LoginDto) {

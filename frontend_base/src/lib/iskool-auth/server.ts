@@ -15,7 +15,14 @@ const contextSchema = z.object({
     email: z.string().email(),
     displayName: z.string().min(1),
   }),
-  school: z.object({ id: z.string().uuid(), name: z.string().min(1) }),
+  school: z.object({
+    id: z.string().uuid(),
+    name: z.string().min(1),
+    logoUrl: z
+      .string()
+      .regex(/^\/api\/school-logo\?v=[1-9][0-9]*$/)
+      .optional(),
+  }),
   membershipId: z.string().uuid(),
   roles: z.array(z.string().min(1)),
 })
@@ -56,7 +63,8 @@ export class IsKoolAuthError extends Error {
 }
 
 async function requestJson(url: string, init: RequestInit) {
-  const localDevelopment = process.env.NODE_ENV === "development" &&
+  const localDevelopment =
+    process.env.NODE_ENV === "development" &&
     process.env.ISKOOL_DEV_LOOPBACK === "127.0.0.1" &&
     /^http:\/\/127\.0\.0\.1:300[12]\/api\/v1\//.test(url)
   const response = await fetch(url, {
@@ -102,7 +110,9 @@ export async function fetchIsKoolContext(tokens: IsKoolTokens) {
   const attempts = [
     tokens.sams ? { url: sams, token: tokens.sams } : null,
     tokens.aps ? { url: aps, token: tokens.aps } : null,
-  ].filter((attempt): attempt is { url: string; token: string } => Boolean(attempt))
+  ].filter((attempt): attempt is { url: string; token: string } =>
+    Boolean(attempt)
+  )
 
   for (const attempt of attempts) {
     try {
@@ -113,7 +123,8 @@ export async function fetchIsKoolContext(tokens: IsKoolTokens) {
         })
       )
     } catch (error) {
-      if (!(error instanceof IsKoolAuthError) || error.status !== 401) throw error
+      if (!(error instanceof IsKoolAuthError) || error.status !== 401)
+        throw error
     }
   }
   throw new IsKoolAuthError(401)

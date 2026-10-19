@@ -1,6 +1,14 @@
 # IsKool product delivery
 
-Updated: 2026-10-18 (Africa/Harare).
+Updated: 2026-10-19 (Africa/Harare).
+
+## Current owner-prioritized capability: VIM-71 school identity settings
+
+Owner confirmed dashboard totals now appear updated, then requested real white-label settings and own Admin profile edits. VIM-71 was created after searching existing IsKool issues; no duplicate branding issue existed. It is In Progress. VIM-51/PR #6 remain open pending explicit merge approval. Work is isolated on dependent branch `feat/school-identity-settings`; no PR was merged implicitly.
+
+Implemented at this checkpoint: additive identity columns and version/format constraints; Admin/current-school and own-profile RLS UPDATE policies and narrow column grants; SAMS controller/DTO/service/repository with optimistic updates and atomic audits; validated/canonical bounded logo ingestion; authenticated scoped logo readers; real Settings forms; shared header/sidebar/footer/title branding. Forward migration `20261019141039_school_identity_settings.sql` replayed on fresh disposable PostgreSQL, restricted-role SQL checks passed (including disabled Admin and APS write denial), and Prisma drift matched. Existing user credentials and School Alpha records are preserved. Root Sharp is pinned to patched 0.35.5 after rejecting the vulnerable initial candidate.
+
+Local frontend 137 tests, SAMS 80 tests and APS 19 tests passed. Final CI/hosted development/browser evidence belongs to the focused PR verification discussion; pending at this checkpoint. Human acceptance and release are not claimed. See `docs/contracts/SCHOOL_IDENTITY_SETTINGS.md` and `docs/acceptance/VIM-71.md`. Owner-prioritized branding precedes the next VIM-52 authorized class-context milestone; it does not mark broader VIM-59/64 domains Done.
 
 ## Current capability and gate
 

@@ -3,6 +3,7 @@ import { useLayoutEffect, useState, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Bell, UserCircle } from "lucide-react"
+import { SchoolLogo } from "@/components/school-logo"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import {
@@ -39,22 +40,33 @@ export function SiteHeader({ context }: { context: IsKoolContext }) {
       <header className="border-b bg-background px-3 py-3 sm:px-5">
         <div className="flex flex-wrap items-center gap-2">
           <SidebarTrigger className="size-11" />
-          <div className="mr-auto min-w-0">
-            <p className="max-w-44 truncate text-sm font-semibold">
-              {context.school.name}
-            </p>
-            <nav
-              aria-label="Breadcrumb"
-              className="text-xs text-muted-foreground"
-            >
-              <Link href="/home">Home</Link>
-              <span aria-hidden="true"> / </span>
-              <span className="capitalize">
-                {pathname.startsWith("/admin/students/")
-                  ? "Student record"
-                  : pathname.split("/").filter(Boolean).slice(-1)[0]?.replace(/-/g, " ")}
-              </span>
-            </nav>
+          <div className="mr-auto flex min-w-0 items-center gap-2">
+            <SchoolLogo
+              school={context.school}
+              showName={false}
+              markClassName="size-8"
+            />
+            <div>
+              <p className="max-w-44 truncate text-sm font-semibold">
+                {context.school.name}
+              </p>
+              <nav
+                aria-label="Breadcrumb"
+                className="text-xs text-muted-foreground"
+              >
+                <Link href="/home">Home</Link>
+                <span aria-hidden="true"> / </span>
+                <span className="capitalize">
+                  {pathname.startsWith("/admin/students/")
+                    ? "Student record"
+                    : pathname
+                        .split("/")
+                        .filter(Boolean)
+                        .slice(-1)[0]
+                        ?.replace(/-/g, " ")}
+                </span>
+              </nav>
+            </div>
           </div>
           <ContextSwitcher context={context} />
           <Button asChild variant="ghost" size="icon" className="size-11">
