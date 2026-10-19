@@ -34,3 +34,6 @@ Thumbs.db
 # Existing standalone repository; keep it separate from this root repo.
 /aps-api/
 /sams-api/
+
+# Private local demo-account handoff
+/Passwords.txt

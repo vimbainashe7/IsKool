@@ -114,7 +114,7 @@ export function LoginForm1({
                     <fieldset className="grid gap-3 rounded-xl border border-iskool-cream bg-iskool-cream/45 p-3" disabled={isSubmitting}>
                       <legend className="px-1 text-sm font-medium">Development accounts</legend>
                       <p id="dev-account-help" className="text-xs text-muted-foreground">
-                        Live local testing. Enter your seed password once for this page. Selecting an account only fills the form.
+                        Live local testing. Find the demo password in Passwords.txt at the repository root. Enter it once here, then select an account to fill the form.
                       </p>
                       <label htmlFor="dev-seed-password" className="text-sm font-medium">Development seed password</label>
                       <Input id="dev-seed-password" type="password" autoComplete="off" aria-describedby="dev-account-help" value={devPassword}

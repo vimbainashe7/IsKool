@@ -50,7 +50,7 @@ export default async function SettingsLayout({
       description="View your account and manage your appearance preferences."
       icon={Settings}
     >
-      <div className="rounded-[24px] border border-iskool-cream bg-white/70 py-6 shadow-[0_18px_55px_rgba(4,9,61,0.06)]">
+      <div className="rounded-[24px] border border-iskool-cream bg-white/70 py-6 shadow-[0_18px_55px_rgba(4,9,61,0.06)] dark:bg-background">
         {session?.status === "iskool" ? (
           session.context.activeRole === "admin" ? (
             <SchoolSettings />

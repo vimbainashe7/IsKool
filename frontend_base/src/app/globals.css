@@ -119,6 +119,31 @@
   --sidebar-ring: #fff5d4;
 }
 
+/* Public auth uses light surfaces even when the saved workspace theme is dark.
+   Scope the complete interactive palette so cards, hints and inputs agree. */
+.iskool-auth {
+  color-scheme: light;
+  --background: #fffdf5;
+  --foreground: #04093d;
+  --card: #ffffff;
+  --card-foreground: #04093d;
+  --popover: #ffffff;
+  --popover-foreground: #04093d;
+  --primary: #04093d;
+  --primary-foreground: #fff5d4;
+  --secondary: #fff5d4;
+  --secondary-foreground: #122143;
+  --muted: #f7efd0;
+  --muted-foreground: #596071;
+  --accent: #2a4178;
+  --accent-foreground: #fff5d4;
+  --destructive: #b42318;
+  --border: #e7dfc6;
+  --input: #e7dfc6;
+  --ring: #2a4178;
+  color: var(--foreground);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

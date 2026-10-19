@@ -114,7 +114,9 @@ Both readiness responses must report `status=ok`, `database=ok` and `redis=disab
 
 ### Developer sign-in
 
-Open `/sign-in`. In **Development accounts**, enter the seed password configured in the ignored backend `DEV_SEED_PASSWORD` once for the current page. The password comes from the developer who configured the approved development fixtures, not from Supabase or frontend source.
+Open `/sign-in`. In this canonical development checkout, the existing shared demo password and account emails are written in local **`Passwords.txt`** at the repository root. Open it with `notepad .\Passwords.txt`. This file is Git-ignored and must stay local; it is not part of a fresh clone. If absent, obtain the configured development credential from the project owner. It matches the ignored backend `DEV_SEED_PASSWORD`; do not rotate or reseed accounts merely to sign in.
+
+In **Development accounts**, paste that password into **Development seed password**, select Student, Teacher or Admin, then click **Sign in**. Selecting a role only fills the form. Public authentication screens keep their readable light palette even when the saved workspace preference is dark.
 
 | Button | Email filled |
 | --- | --- |
