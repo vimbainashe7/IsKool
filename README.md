@@ -71,6 +71,8 @@ The Windows launcher independently selects Node 22/24, validates non-production 
 Unchanged backend sources reuse a verified build. The first frontend compilation on an 8 GB Windows laptop can take several minutes; startup prints its wait and allows up to five minutes before failing. Free memory by closing unused apps if worker startup or compilation times out.
 On a memory-constrained laptop, stop the dev launcher with Ctrl+C while running unit tests or production builds, then restart it for live browser acceptance.
 
+If your prompt currently ends in `\frontend_base>`, first return to the root with `cd ..` (or use the absolute `cd` above). Do not run `cd frontend_base` while already in that directory. Do not use `pnpm dev` for the connected acceptance session: that starts only Next.js and leaves APS/SAMS unavailable. If an older launcher is still running, stop that terminal with `Ctrl+C` before starting a new one. A successful connected start prints `READY aps`, `READY sams`, `READY frontend`, and then `PASS LIVE IsKool ready`.
+
 ### Start backend separately
 
 ```powershell
@@ -166,6 +168,7 @@ Live tests require the live APIs and approved fixture identities. Demo workflow 
 | Missing root package.json | Confirm `Get-Location`, `git branch --show-current`, and `Test-Path package.json`. Use the full canonical checkout, not an old frontend branch. Preserve local changes before switching. |
 | Missing npm script | Backend scripts run at root; `pnpm dev` runs in frontend_base. Inspect `npm run` in the correct folder. |
 | Port 3000/3001/3002 occupied | Run `npm run dev:check`. Inspect the identified checkout, PID and command. Reuse a compatible healthy server or stop its known terminal with Ctrl+C. Never blindly taskkill node.exe. |
+| Launcher prints `Command failed: /d` before starting services | Stop that terminal with `Ctrl+C`, return to the repository root, and rerun `npm run dev:iskool`; the current launcher executes pnpm with pinned Node 24 and no `/d` shell wrapper. |
 | Missing Prisma client | With Node 22 at root run `npm ci`, then `npm run prisma:generate`. Generate does not migrate. |
 | Unsupported Node | Backend requires 22; frontend toolchain requires 24. Use independent pinned executables; do not switch a running nvm symlink. |
 | Database unreachable | Check VPN/network, the session-pooler hostname/port, database password, ssl settings and project status. Run the doctor. Do not substitute a fake DB. |

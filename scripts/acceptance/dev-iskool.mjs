@@ -22,7 +22,10 @@ const hash = (value) => createHash('sha256').update(value).digest('hex');
 function fail(message) { throw new Error(message); }
 function run(exe, args, options = {}) {
   const result = spawnSync(exe, args, { cwd: root, encoding: 'utf8', ...options });
-  if (result.error || result.status !== 0) fail(`Command failed: ${args[0]}. See the output above and README troubleshooting.`);
+  if (result.error || result.status !== 0) {
+    const detail = result.error?.message ?? result.stderr?.trim();
+    fail(`Command failed: ${exe} ${args.join(' ')}${detail ? ` (${detail})` : ''}. See the output above and README troubleshooting.`);
+  }
   return result.stdout?.trim();
 }
 function runtime(major, variable) {
@@ -136,7 +139,13 @@ try {
   const node24 = backendOnly ? null : runtime(24, 'ISKOOL_NODE24');
   const head = run('git', ['rev-parse', 'HEAD']);
   if (node22) run(node22, [join(dirname(node22), 'node_modules/npm/bin/npm-cli.js'), '--version']);
-  if (node24) console.log(`pnpm ${run('cmd.exe', ['/d', '/s', '/c', 'pnpm --version'], { env: { ...inheritedEnv, PATH: `${dirname(node24)};${inheritedEnv.PATH}` } })}`);
+  if (node24) {
+    // Avoid cmd.exe's pnpm wrapper: on some Windows installations it resolves
+    // `/d` as the command and exits before APS/SAMS can start.
+    const pnpmCli = join(process.env.APPDATA ?? '', 'npm/node_modules/pnpm/bin/pnpm.mjs');
+    if (!existsSync(pnpmCli)) fail('pnpm is missing. From frontend_base run pnpm install --frozen-lockfile with Node 24.');
+    console.log(`pnpm ${run(node24, [pnpmCli, '--version'], { env: { ...inheritedEnv, PATH: `${dirname(node24)};${inheritedEnv.PATH}` } })}`);
+  }
   const services = [];
   if (!frontendOnly) {
     if (!existsSync(join(root, 'node_modules/.prisma/client/index.js'))) fail('Prisma client missing. With Node 22 run npm ci, then npm run prisma:generate.');
