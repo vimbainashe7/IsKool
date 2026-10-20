@@ -24,6 +24,10 @@ function setup() {
     }
   };
   const records = {
+    classes: jest.fn().mockResolvedValue([
+      { id: 'class-1', name: 'Form 1', academicYearLabel: '2026' },
+      { id: 'class-2', name: 'Form 2', academicYearLabel: '2026' }
+    ]),
     run: jest.fn(async (_p, _r, fn) => fn(tx)),
     student: jest.fn().mockResolvedValue({
       id: 'student',
@@ -47,6 +51,15 @@ function setup() {
   };
 }
 describe('SAMS account and teaching authority administration', () => {
+  it('returns bounded class choices with their joined year label and next cursor', async () => {
+    const { service } = setup();
+    await expect(
+      service.classes(principal, 'request', { limit: 1 })
+    ).resolves.toEqual({
+      items: [{ id: 'class-1', name: 'Form 1', academicYearLabel: '2026' }],
+      nextCursor: 'class-1'
+    });
+  });
   it('denies teachers before accessing records', async () => {
     const { service, records } = setup();
     await expect(

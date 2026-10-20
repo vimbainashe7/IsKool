@@ -186,7 +186,9 @@ export function SchoolClassOverview() {
         </Link>
       </AdminSectionCard>
       <TeachingAssignments />
-      <AcademicSetup onSaved={() => setRetry((v) => v + 1)} />
+      {data && (
+        <AcademicSetup initial={data} onSaved={() => setRetry((v) => v + 1)} />
+      )}
     </>
   )
 }

@@ -38,4 +38,6 @@ The Windows launcher now also checks its generated Prisma schema in CI (`npm run
 
 The query-contract suite additionally verifies the omitted page-size default (25), invalid limits and tenant-filter injection. Private-listener HTTP coverage verifies the same default after Nest transformation. These regressions were added after live testing exposed response-only transformer decorators overwriting the request default; the shared-contract suite now has four tests.
 
+Live QA also exposed pool-acquisition failures: a six-read page burst reproduced three `P2028` failures at the existing two-second acquisition limit. School Classes now reuses its loaded calendar for setup, and the chooser joins class/year in one query. Pool-busy responses are safe 503s; the browser boundary retries GET once within the original overall deadline, never mutations. Connection limits and transaction timeouts were not raised. The committed regression tests cover bootstrap reuse, bounded read retries and mutation non-retry; final live/CI evidence remains on PR #8.
+
 Contract and security details: [Internal SAMS API](../contracts/INTERNAL_SAMS_API.md). PR and delivery state: [Product delivery](../progress/PRODUCT_DELIVERY.md).

@@ -28,6 +28,61 @@ it("requires a SAMS session cookie", async () => {
     ).status
   ).toBe(401)
 })
+it("retries a temporary GET dependency failure once inside the same deadline", async () => {
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce(Response.json({ error: {} }, { status: 503 }))
+    .mockResolvedValueOnce(Response.json({ items: [], nextCursor: null }))
+  vi.stubGlobal("fetch", fetcher)
+  expect(
+    (
+      await GET(
+        new Request("http://localhost/api/sams/students"),
+        params(["students"])
+      )
+    ).status
+  ).toBe(200)
+  expect(fetcher).toHaveBeenCalledTimes(2)
+  expect(fetcher.mock.calls[0][1].signal).toBe(fetcher.mock.calls[1][1].signal)
+})
+it("bounds unsuccessful read retries and never turns them into a successful empty list", async () => {
+  const fetcher = vi
+    .fn()
+    .mockImplementation(async () =>
+      Response.json({ error: {} }, { status: 503 })
+    )
+  vi.stubGlobal("fetch", fetcher)
+  expect(
+    (
+      await GET(
+        new Request("http://localhost/api/sams/students"),
+        params(["students"])
+      )
+    ).status
+  ).toBe(503)
+  expect(fetcher).toHaveBeenCalledTimes(2)
+})
+it("never retries a mutation after a dependency failure", async () => {
+  const fetcher = vi
+    .fn()
+    .mockImplementation(async () =>
+      Response.json({ error: {} }, { status: 503 })
+    )
+  vi.stubGlobal("fetch", fetcher)
+  expect(
+    (
+      await POST(
+        new Request("http://localhost/api/sams/students", {
+          method: "POST",
+          headers: { origin: "http://localhost" },
+          body: "{}",
+        }),
+        params(["students"])
+      )
+    ).status
+  ).toBe(503)
+  expect(fetcher).toHaveBeenCalledTimes(1)
+})
 it("allows only the scoped account and class-choice filters", async () => {
   const fetcher = vi
     .fn()

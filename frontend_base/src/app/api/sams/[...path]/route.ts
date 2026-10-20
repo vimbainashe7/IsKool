@@ -71,7 +71,8 @@ async function handle(
       }
     }
     const { sams } = getIsKoolApiUrls()
-    const response = await fetch(`${sams}/${path}${url.search}`, {
+    const target = `${sams}/${path}${url.search}`
+    const options: RequestInit = {
       method: request.method,
       body,
       cache: "no-store",
@@ -83,7 +84,15 @@ async function handle(
         "content-type": "application/json",
         "x-request-id": randomUUID(),
       },
-    })
+    }
+    let response = await fetch(target, options)
+    // Only retry an explicitly retryable, idempotent read. A shared signal
+    // keeps both attempts within the original overall request deadline.
+    if (request.method === "GET" && response.status === 503) {
+      await response.body?.cancel()
+      await new Promise((resolve) => setTimeout(resolve, 75))
+      response = await fetch(target, options)
+    }
     const result = await response.json().catch(() => null)
     if (!response.ok) {
       const message =

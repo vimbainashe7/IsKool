@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { AuthPrincipal } from '@aps-sams/auth';
 import { Prisma } from '@prisma/client';
 import {
@@ -6,30 +6,23 @@ import {
   TransactionService
 } from '../../database/transaction/transaction.service';
 import {
+  ApplicationError,
   BusinessRuleError,
   ConflictError
 } from '../../common/errors/application-error';
 import { AccountListDto, ClassListDto } from './class-access.dto';
 @Injectable()
 export class ClassAccessRepository {
+  private readonly logger = new Logger(ClassAccessRepository.name);
   classes(tx: TransactionClient, p: AuthPrincipal, q: ClassListDto) {
-    return tx.schoolClass.findMany({
-      where: {
-        schoolId: p.schoolId,
-        ...(q.cursor ? { id: { gt: q.cursor } } : {}),
-        ...(q.search
-          ? {
-              name: {
-                startsWith: q.search.trim(),
-                mode: 'insensitive' as const
-              }
-            }
-          : {})
-      },
-      select: { id: true, name: true, year: { select: { label: true } } },
-      orderBy: { id: 'asc' },
-      take: q.limit + 1
-    });
+    const prefix = (q.search ?? '').trim().replace(/[\\%_]/g, '\\$&') + '%';
+    return tx.$queryRaw<
+      Array<{ id: string; name: string; academicYearLabel: string }>
+    >`
+      SELECT c.id,c.name,y.label AS "academicYearLabel" FROM public.classes c
+      JOIN public.academic_years y ON y.id=c.academic_year_id AND y.school_id=c.school_id
+      WHERE c.school_id=${p.schoolId}::uuid AND (${q.cursor ?? null}::uuid IS NULL OR c.id>${q.cursor ?? null}::uuid)
+      AND c.name ILIKE ${prefix} ORDER BY c.id LIMIT ${q.limit + 1}`;
   }
   async account(tx: TransactionClient, p: AuthPrincipal, id: string) {
     const [row] = await tx.$queryRaw<
@@ -55,6 +48,20 @@ export class ClassAccessRepository {
       );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (['P2028', 'P2024'].includes(error.code)) {
+          this.logger.warn(
+            JSON.stringify({
+              event: 'school_records_database_unavailable',
+              code: error.code,
+              requestId: r
+            })
+          );
+          throw new ApplicationError(
+            'SCHOOL_RECORDS_UNAVAILABLE',
+            'School records are temporarily busy. Reload before retrying changes.',
+            503
+          );
+        }
         if (error.code === 'P2002')
           throw new ConflictError(
             'This account link or teaching assignment already exists. Open the existing record.'

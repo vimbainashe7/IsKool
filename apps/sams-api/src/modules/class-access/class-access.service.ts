@@ -23,13 +23,11 @@ export class ClassAccessService {
     return this.run(p, r, async (tx) => {
       const rows = await this.records.classes(tx, p, q);
       return {
-        items: rows
-          .slice(0, q.limit)
-          .map((row) => ({
-            id: row.id,
-            name: row.name,
-            academicYearLabel: row.year.label
-          })),
+        items: rows.slice(0, q.limit).map((row) => ({
+          id: row.id,
+          name: row.name,
+          academicYearLabel: row.academicYearLabel
+        })),
         nextCursor: rows.length > q.limit ? rows[q.limit - 1].id : null
       };
     });
