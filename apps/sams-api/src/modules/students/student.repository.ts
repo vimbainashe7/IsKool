@@ -4,6 +4,29 @@ import { Prisma } from '@prisma/client';
 import { TransactionService, TransactionClient } from '../../database/transaction/transaction.service';
 import { ConflictError, BusinessRuleError } from '../../common/errors/application-error';
 
+export interface SchoolReferencePeriod {
+  id: string;
+  schoolId: string;
+  label: string;
+  startsOn: string;
+  endsOn: string;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface SchoolReferenceData {
+  years: SchoolReferencePeriod[];
+  terms: Array<SchoolReferencePeriod & { academicYearId: string }>;
+  classes: Array<{
+    id: string;
+    schoolId: string;
+    academicYearId: string;
+    name: string;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  truncated: boolean;
+}
+
 @Injectable()
 export class StudentRepository {
   constructor(private readonly transactions: TransactionService) {}
@@ -22,6 +45,35 @@ export class StudentRepository {
 
   list(tx: TransactionClient, schoolId: string, limit: number, cursor?: string) {
     return tx.student.findMany({ where: { schoolId, ...(cursor ? { id: { gt: cursor } } : {}) }, orderBy: { id: 'asc' }, take: limit + 1 });
+  }
+
+  async referenceData(
+    tx: TransactionClient,
+    schoolId: string
+  ): Promise<SchoolReferenceData> {
+    // One bounded snapshot preserves the existing camel-case ISO JSON contract.
+    const [data] = await tx.$queryRaw<SchoolReferenceData[]>`
+      WITH years AS (SELECT id,school_id AS "schoolId",label,
+        to_char(starts_on::timestamp,'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "startsOn",
+        to_char(ends_on::timestamp,'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "endsOn",
+        to_char(created_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "createdAt",
+        to_char(updated_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt"
+        FROM public.academic_years WHERE school_id=${schoolId}::uuid ORDER BY starts_on DESC,id LIMIT 101),
+      terms AS (SELECT id,school_id AS "schoolId",academic_year_id AS "academicYearId",label,
+        to_char(starts_on::timestamp,'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "startsOn",
+        to_char(ends_on::timestamp,'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "endsOn",
+        to_char(created_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "createdAt",
+        to_char(updated_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt"
+        FROM public.academic_terms WHERE school_id=${schoolId}::uuid ORDER BY starts_on DESC,id LIMIT 101),
+      classes AS (SELECT id,school_id AS "schoolId",academic_year_id AS "academicYearId",name,
+        to_char(created_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "createdAt",
+        to_char(updated_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt"
+        FROM public.classes WHERE school_id=${schoolId}::uuid ORDER BY name,id LIMIT 101)
+      SELECT COALESCE((SELECT jsonb_agg(y ORDER BY y."startsOn" DESC,y.id) FROM(SELECT * FROM years ORDER BY "startsOn" DESC,id LIMIT 100)y),'[]'::jsonb) AS years,
+        COALESCE((SELECT jsonb_agg(t ORDER BY t."startsOn" DESC,t.id) FROM(SELECT * FROM terms ORDER BY "startsOn" DESC,id LIMIT 100)t),'[]'::jsonb) AS terms,
+        COALESCE((SELECT jsonb_agg(c ORDER BY c.name,c.id) FROM(SELECT * FROM classes ORDER BY name,id LIMIT 100)c),'[]'::jsonb) AS classes,
+        ((SELECT count(*)>100 FROM years) OR (SELECT count(*)>100 FROM terms) OR (SELECT count(*)>100 FROM classes)) AS truncated`;
+    return data;
   }
 
   async summary(tx: TransactionClient, schoolId: string) {

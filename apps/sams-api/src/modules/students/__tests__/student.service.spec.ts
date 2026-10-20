@@ -10,6 +10,12 @@ function setup() {
   return { tx, repo, audit, service: new StudentService(repo as unknown as StudentRepository, audit as unknown as AuditService) };
 }
 describe('student service invariants', () => {
+  it('loads the bounded calendar snapshot through the authenticated school repository',async()=>{
+    const {service,repo}=setup();const snapshot={years:[],terms:[],classes:[],truncated:false};
+    const read=jest.fn().mockResolvedValue(snapshot);Object.assign(repo,{referenceData:read});
+    await expect(service.referenceData(p,'r')).resolves.toEqual(snapshot);
+    expect(read).toHaveBeenCalledWith(expect.anything(),p.schoolId);
+  });
   it('denies student and teacher summary access before querying records', () => {
     const {service,repo} = setup();
     for (const role of ['student','teacher']) expect(() => service.summary({...p,roles:[role]},'r')).toThrow('Permission denied');

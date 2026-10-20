@@ -76,9 +76,12 @@ async function handle(
       method: request.method,
       body,
       cache: "no-store",
-      signal: AbortSignal.timeout(
-        process.env.NODE_ENV === "development" ? 30_000 : 10_000
-      ),
+      signal: AbortSignal.any([
+        request.signal,
+        AbortSignal.timeout(
+          process.env.NODE_ENV === "development" ? 30_000 : 10_000
+        ),
+      ]),
       headers: {
         authorization: `Bearer ${token}`,
         "content-type": "application/json",
@@ -88,7 +91,11 @@ async function handle(
     let response = await fetch(target, options)
     // Only retry an explicitly retryable, idempotent read. A shared signal
     // keeps both attempts within the original overall request deadline.
-    if (request.method === "GET" && response.status === 503) {
+    if (
+      request.method === "GET" &&
+      response.status === 503 &&
+      !options.signal?.aborted
+    ) {
       await response.body?.cancel()
       await new Promise((resolve) => setTimeout(resolve, 75))
       response = await fetch(target, options)

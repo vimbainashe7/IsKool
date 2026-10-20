@@ -23,9 +23,13 @@ export function TeachingAssignments() {
   useEffect(() => {
     if (!classId) return
     let active = true
+    const controller = new AbortController()
     studentRequest(
       `student-administration/classes/${classId}/teachers?limit=25${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`,
-      teacherListSchema
+      teacherListSchema,
+      "GET",
+      undefined,
+      controller.signal
     )
       .then((result) => {
         if (active) {
@@ -43,6 +47,7 @@ export function TeachingAssignments() {
       })
     return () => {
       active = false
+      controller.abort()
     }
   }, [classId, cursor, retry])
   async function mutate(work: () => Promise<unknown>, message: string) {

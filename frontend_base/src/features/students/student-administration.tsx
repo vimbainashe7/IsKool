@@ -42,11 +42,30 @@ export function StudentAdministration({ studentId }: { studentId?: string }) {
   const [retry, setRetry] = useState(0)
   useEffect(() => {
     let active = true
+    const controller = new AbortController()
     const load = studentId
       ? Promise.all([
-          studentRequest(`students/${studentId}`, studentDetailSchema),
-          studentRequest("student-administration/context", referenceSchema),
-          studentRequest("guardians?limit=50", guardianListSchema),
+          studentRequest(
+            `students/${studentId}`,
+            studentDetailSchema,
+            "GET",
+            undefined,
+            controller.signal
+          ),
+          studentRequest(
+            "student-administration/context",
+            referenceSchema,
+            "GET",
+            undefined,
+            controller.signal
+          ),
+          studentRequest(
+            "guardians?limit=50",
+            guardianListSchema,
+            "GET",
+            undefined,
+            controller.signal
+          ),
         ]).then(([detail, context, people]) => {
           if (active) {
             setStudent(detail)
@@ -56,7 +75,13 @@ export function StudentAdministration({ studentId }: { studentId?: string }) {
             setError("")
           }
         })
-      : studentRequest("students?limit=25", studentListSchema).then((data) => {
+      : studentRequest(
+          "students?limit=25",
+          studentListSchema,
+          "GET",
+          undefined,
+          controller.signal
+        ).then((data) => {
           if (active) {
             setStudents(data.items)
             setCursor(data.nextCursor)
@@ -73,6 +98,7 @@ export function StudentAdministration({ studentId }: { studentId?: string }) {
     })
     return () => {
       active = false
+      controller.abort()
     }
   }, [studentId, retry])
   async function act(work: () => Promise<void>, success: string) {

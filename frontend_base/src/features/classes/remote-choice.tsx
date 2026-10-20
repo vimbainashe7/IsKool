@@ -9,14 +9,18 @@ type Choice = { id: string; label: string }
 async function choices(
   kind: "student" | "teacher" | "class",
   search: string,
-  cursor?: string
+  cursor: string | undefined,
+  signal: AbortSignal
 ) {
   const query = new URLSearchParams({ limit: "25", search })
   if (cursor) query.set("cursor", cursor)
   if (kind === "class") {
     const page = await studentRequest(
       `student-administration/classes?${query}`,
-      classOptionsSchema
+      classOptionsSchema,
+      "GET",
+      undefined,
+      signal
     )
     return {
       ...page,
@@ -29,7 +33,10 @@ async function choices(
   query.set("role", kind)
   const page = await studentRequest(
     `student-administration/accounts?${query}`,
-    accountOptionsSchema
+    accountOptionsSchema,
+    "GET",
+    undefined,
+    signal
   )
   return {
     ...page,
@@ -68,9 +75,10 @@ export function RemoteChoice({
   const [selected, setSelected] = useState<Choice>()
   useEffect(() => {
     let active = true
+    const controller = new AbortController()
     const timer = setTimeout(() => {
       setLoading(true)
-      choices(kind, search, cursor)
+      choices(kind, search, cursor, controller.signal)
         .then((result) => {
           if (active) {
             setPage(result)
@@ -90,6 +98,7 @@ export function RemoteChoice({
     return () => {
       active = false
       clearTimeout(timer)
+      controller.abort()
     }
   }, [kind, search, cursor, retry])
   const preserved =

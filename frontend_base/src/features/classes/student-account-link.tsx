@@ -24,7 +24,14 @@ export function StudentAccountLink({
     [retry, setRetry] = useState(0)
   useEffect(() => {
     let active = true
-    studentRequest(`students/${studentId}/account`, accountDetailSchema)
+    const controller = new AbortController()
+    studentRequest(
+      `students/${studentId}/account`,
+      accountDetailSchema,
+      "GET",
+      undefined,
+      controller.signal
+    )
       .then((result) => {
         if (active) {
           setData(result)
@@ -40,6 +47,7 @@ export function StudentAccountLink({
       })
     return () => {
       active = false
+      controller.abort()
     }
   }, [studentId, retry])
   async function save(event: FormEvent) {

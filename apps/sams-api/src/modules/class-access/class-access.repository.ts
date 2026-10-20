@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { AuthPrincipal } from '@aps-sams/auth';
 import { Prisma } from '@prisma/client';
 import {
@@ -6,14 +6,12 @@ import {
   TransactionService
 } from '../../database/transaction/transaction.service';
 import {
-  ApplicationError,
   BusinessRuleError,
   ConflictError
 } from '../../common/errors/application-error';
 import { AccountListDto, ClassListDto } from './class-access.dto';
 @Injectable()
 export class ClassAccessRepository {
-  private readonly logger = new Logger(ClassAccessRepository.name);
   classes(tx: TransactionClient, p: AuthPrincipal, q: ClassListDto) {
     const prefix = (q.search ?? '').trim().replace(/[\\%_]/g, '\\$&') + '%';
     return tx.$queryRaw<
@@ -48,20 +46,6 @@ export class ClassAccessRepository {
       );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (['P2028', 'P2024'].includes(error.code)) {
-          this.logger.warn(
-            JSON.stringify({
-              event: 'school_records_database_unavailable',
-              code: error.code,
-              requestId: r
-            })
-          );
-          throw new ApplicationError(
-            'SCHOOL_RECORDS_UNAVAILABLE',
-            'School records are temporarily busy. Reload before retrying changes.',
-            503
-          );
-        }
         if (error.code === 'P2002')
           throw new ConflictError(
             'This account link or teaching assignment already exists. Open the existing record.'

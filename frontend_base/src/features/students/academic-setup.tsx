@@ -25,7 +25,14 @@ export function AcademicSetup({
   useEffect(() => {
     if (initial) return
     let active = true
-    studentRequest("student-administration/context", referenceSchema)
+    const controller = new AbortController()
+    studentRequest(
+      "student-administration/context",
+      referenceSchema,
+      "GET",
+      undefined,
+      controller.signal
+    )
       .then((value) => {
         if (active) setData(value)
       })
@@ -39,6 +46,7 @@ export function AcademicSetup({
       })
     return () => {
       active = false
+      controller.abort()
     }
   }, [initial])
   async function save(

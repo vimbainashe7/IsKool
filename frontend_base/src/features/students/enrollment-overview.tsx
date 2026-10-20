@@ -39,9 +39,13 @@ export function EnrollmentOverview() {
   }
   useEffect(() => {
     let active = true
+    const controller = new AbortController()
     studentRequest(
       `student-administration/enrollments?limit=25${page ? `&cursor=${page}` : ""}`,
-      pageSchema
+      pageSchema,
+      "GET",
+      undefined,
+      controller.signal
     )
       .then((result) => {
         if (active) {
@@ -59,6 +63,7 @@ export function EnrollmentOverview() {
       })
     return () => {
       active = false
+      controller.abort()
     }
   }, [page, retry])
   return (
@@ -125,7 +130,14 @@ export function SchoolClassOverview() {
   const [retry, setRetry] = useState(0)
   useEffect(() => {
     let active = true
-    studentRequest("student-administration/context", referenceSchema)
+    const controller = new AbortController()
+    studentRequest(
+      "student-administration/context",
+      referenceSchema,
+      "GET",
+      undefined,
+      controller.signal
+    )
       .then((value) => {
         if (active) {
           setData(value)
@@ -140,6 +152,7 @@ export function SchoolClassOverview() {
       })
     return () => {
       active = false
+      controller.abort()
     }
   }, [retry])
   return (

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, afterEach, expect, it, vi } from "vitest"
 const mocks = vi.hoisted(() => ({ cookie: vi.fn() }))
 vi.mock("next/headers", () => ({
@@ -27,6 +28,26 @@ it("requires a SAMS session cookie", async () => {
       )
     ).status
   ).toBe(401)
+})
+it("propagates a cancelled caller so obsolete reads do not continue upstream or retry", async () => {
+  const controller = new AbortController()
+  controller.abort()
+  const fetcher = vi.fn().mockImplementation(async (_url, options) => {
+    expect(options.signal.aborted).toBe(true)
+    throw new Error("aborted")
+  })
+  vi.stubGlobal("fetch", fetcher)
+  expect(
+    (
+      await GET(
+        new Request("http://localhost/api/sams/students", {
+          signal: controller.signal,
+        }),
+        params(["students"])
+      )
+    ).status
+  ).toBe(503)
+  expect(fetcher).toHaveBeenCalledTimes(1)
 })
 it("retries a temporary GET dependency failure once inside the same deadline", async () => {
   const fetcher = vi
