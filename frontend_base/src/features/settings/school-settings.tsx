@@ -275,7 +275,7 @@ export function SchoolSettings() {
                 )}
               </CardContent>
             </Card>
-            <div className="sticky bottom-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-background p-4 shadow-lg">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-background p-4 shadow-lg">
               <p className="text-sm text-muted-foreground" role="status">
                 {busy
                   ? "Saving your changes…"
