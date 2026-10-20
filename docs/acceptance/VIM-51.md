@@ -56,4 +56,4 @@ SELECT action, entity_type, entity_id, created_at FROM public.audit_events WHERE
 
 Expect student.created, guardian.created, student.guardian_linked, enrollment.created, student.updated and enrollment.status_changed. Audit reads here are maintenance inspection, not evidence of runtime isolation: `npm run db:master-data:test` uses actual restricted login roles against a disposable replay database. Never point destructive fixture/replay tests at hosted Supabase. No general cleanup/delete is provided; history is retained. Use archival only after closing open enrollments.
 
-Human acceptance remains pending for this new capability. Automated success, CI verification, merge, human acceptance and release are tracked separately in [PRODUCT_DELIVERY.md](../progress/PRODUCT_DELIVERY.md).
+Owner accepted the capability and approved merge on 2026-10-20; PR #6 merged as `81c7c15`. Automated success, CI verification, merge, human acceptance and release are tracked separately in [PRODUCT_DELIVERY.md](../progress/PRODUCT_DELIVERY.md).
