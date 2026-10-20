@@ -282,9 +282,9 @@ model SchoolClass {
   year AcademicYear @relation(fields:[academicYearId,schoolId], references:[id,schoolId], onDelete:Restrict, onUpdate:NoAction)
   enrollments Enrollment[]
   teachers ClassTeacher[]
-  @@index([schoolId,id],map:"classes_school_id_idx")
   @@unique([id,schoolId,academicYearId])
   @@unique([schoolId,academicYearId,name])
+  @@index([schoolId,id],map:"classes_school_id_idx")
   @@map("classes")
 }
 model Enrollment {
