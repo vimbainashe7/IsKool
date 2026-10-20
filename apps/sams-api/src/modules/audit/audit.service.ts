@@ -18,27 +18,38 @@ export interface AuditRecord {
 @Injectable()
 export class AuditService {
   async record(tx: TransactionClient, record: AuditRecord): Promise<void> {
-    await tx.auditEvent.create({
-      data: {
-        actorUserId: record.actorUserId,
-        actorMembershipId: record.actorMembershipId,
-        schoolId: record.schoolId,
-        action: record.action,
-        entityType: record.entityType,
-        entityId: record.entityId,
-        beforeValue: toJsonValue(record.beforeValue),
-        afterValue: toJsonValue(record.afterValue),
-        requestId: record.requestId,
-        reason: record.reason
-      }
-    });
+    await tx.auditEvent.create({ data: auditData(record) });
+  }
+  async recordMany(
+    tx: TransactionClient,
+    records: AuditRecord[]
+  ): Promise<void> {
+    await tx.auditEvent.createMany({ data: records.map(auditData) });
   }
 }
+function auditData(record: AuditRecord) {
+  return {
+    actorUserId: record.actorUserId,
+    actorMembershipId: record.actorMembershipId,
+    schoolId: record.schoolId,
+    action: record.action,
+    entityType: record.entityType,
+    entityId: record.entityId,
+    beforeValue: toJsonValue(record.beforeValue),
+    afterValue: toJsonValue(record.afterValue),
+    requestId: record.requestId,
+    reason: record.reason
+  };
+}
 
-function toJsonValue(value: unknown): Prisma.InputJsonValue | typeof Prisma.JsonNull | undefined {
+function toJsonValue(
+  value: unknown
+): Prisma.InputJsonValue | typeof Prisma.JsonNull | undefined {
   if (value === undefined) {
     return undefined;
   }
-  const serialized = JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue | null;
+  const serialized = JSON.parse(
+    JSON.stringify(value)
+  ) as Prisma.InputJsonValue | null;
   return serialized === null ? Prisma.JsonNull : serialized;
 }

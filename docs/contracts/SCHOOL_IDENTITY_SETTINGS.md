@@ -13,7 +13,7 @@ Role-catalogue authorization uses forced RLS on `roles`: SAMS and APS can read o
 | POST | `/school-settings/logo` | Multipart `logo` and integer `version` |
 | DELETE | `/school-settings/logo` | `{version}`; retains school records |
 
-The Settings interface uses the combined `/save` mutation. Both versions are checked and changed profile/school records plus audit events commit in one transaction. Invalid images are rejected before writing. Unchanged values do not increment versions or create audit events. Existing individual mutation routes remain compatible. The combined school audit action is `school.settings_updated`; image bytes remain excluded.
+The Settings interface uses the combined `/save` mutation. Both versions are checked and changed profile/school records plus audit events commit in one transaction. Invalid images are rejected before writing. Updates return authoritative metadata directly and audit events use one batch insert to bound hosted-database round trips. Unchanged values do not increment versions or create audit events. Existing individual mutation routes remain compatible. The combined school audit action is `school.settings_updated`; image bytes remain excluded.
 
 Settings routes require active SAMS scope and Admin role. Runtime grants cover only relevant columns; UPDATE policies enforce own Admin/current school. Existing FORCE RLS remains enabled. Version checks reject stale writes with 409; triggers enforce increments. Mutations and audit events share a principal-scoped transaction. Audit actions: `profile.display_name_updated`, `school.name_updated`, `school.logo_updated`, `school.logo_removed`. Image bytes are excluded from audit/log payloads.
 

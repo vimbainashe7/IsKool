@@ -5,7 +5,8 @@ import {
   BusinessRuleError,
   PermissionDeniedError
 } from '../../common/errors/application-error';
-import { AuditService } from '../audit/audit.service';
+import { Prisma } from '@prisma/client';
+import { AuditRecord, AuditService } from '../audit/audit.service';
 import { SettingsRepository } from './settings.repository';
 import { OwnProfileDto, SchoolNameDto, SaveSettingsDto } from './settings.dto';
 import { canonicalLogo } from './logo';
@@ -55,35 +56,49 @@ export class SettingsService {
         (dto.logoAction === 'remove' && before.school.logoPresent);
       const profileChanged = before.user.displayName !== dto.displayName;
       if (!schoolChanged && !profileChanged) return before;
-      if (schoolChanged) {
-        const changed = await tx.school.updateMany({
-          where: { id: p.schoolId, brandingVersion: dto.schoolVersion },
-          data: {
-            name: dto.name,
-            brandingVersion: { increment: 1 },
-            ...(dto.logoAction === 'replace'
-              ? { logoDataUrl, logoPresent: true }
-              : dto.logoAction === 'remove'
-                ? { logoDataUrl: null, logoPresent: false }
-                : {})
-          }
-        });
-        if (changed.count !== 1) throw conflict();
+      const after = { school: before.school, user: before.user };
+      try {
+        // RETURNING supplies authoritative metadata without another snapshot query.
+        if (schoolChanged)
+          after.school = await tx.school.update({
+            where: { id: p.schoolId, brandingVersion: dto.schoolVersion },
+            data: {
+              name: dto.name,
+              brandingVersion: { increment: 1 },
+              ...(dto.logoAction === 'replace'
+                ? { logoDataUrl, logoPresent: true }
+                : dto.logoAction === 'remove'
+                  ? { logoDataUrl: null, logoPresent: false }
+                  : {})
+            },
+            select: {
+              id: true,
+              name: true,
+              logoPresent: true,
+              brandingVersion: true
+            }
+          });
+        if (profileChanged)
+          after.user = await tx.user.update({
+            where: { id: p.userId, profileVersion: dto.profileVersion },
+            data: {
+              displayName: dto.displayName,
+              profileVersion: { increment: 1 }
+            },
+            select: { id: true, displayName: true, profileVersion: true }
+          });
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2025'
+        )
+          throw conflict();
+        throw error;
       }
-      if (profileChanged) {
-        const changed = await tx.user.updateMany({
-          where: { id: p.userId, profileVersion: dto.profileVersion },
-          data: {
-            displayName: dto.displayName,
-            profileVersion: { increment: 1 }
-          }
-        });
-        if (changed.count !== 1) throw conflict();
-      }
-      const after = await this.records.read(tx, p);
+      const events: AuditRecord[] = [];
       for (const profile of [false, true]) {
         if (profile ? !profileChanged : !schoolChanged) continue;
-        await this.audit.record(tx, {
+        events.push({
           actorUserId: p.userId,
           actorMembershipId: p.membershipId,
           schoolId: p.schoolId,
@@ -97,6 +112,8 @@ export class SettingsService {
           afterValue: profile ? after.user : after.school
         });
       }
+      // One insert keeps the two entity events atomic and saves a pooler round trip.
+      await this.audit.recordMany(tx, events);
       return after;
     });
   }

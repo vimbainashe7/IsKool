@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { AuthPrincipal } from '@aps-sams/auth';
 import { SettingsService } from '../settings.service';
 import { SettingsRepository } from '../settings.repository';
@@ -22,14 +23,35 @@ function setup() {
     user: { id: p.userId, displayName: 'Admin', profileVersion: 1 }
   };
   const tx = {
-    school: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
-    user: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) }
+    school: {
+      update: jest
+        .fn()
+        .mockResolvedValue({
+          ...state.school,
+          name: 'New school',
+          brandingVersion: 2
+        }),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 })
+    },
+    user: {
+      update: jest
+        .fn()
+        .mockResolvedValue({
+          ...state.user,
+          displayName: 'New admin',
+          profileVersion: 2
+        }),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 })
+    }
   };
   const repo = {
     run: jest.fn(async (_p, _r, work) => work(tx)),
     read: jest.fn().mockResolvedValue(state)
   };
-  const audit = { record: jest.fn().mockResolvedValue(undefined) };
+  const audit = {
+    record: jest.fn().mockResolvedValue(undefined),
+    recordMany: jest.fn().mockResolvedValue(undefined)
+  };
   return {
     state,
     tx,
@@ -53,29 +75,36 @@ describe('current-school settings invariants', () => {
     const { service, repo, tx, audit } = setup();
     await service.saveAll(p, 'request', combined);
     expect(repo.run).toHaveBeenCalledTimes(1);
-    expect(tx.school.updateMany).toHaveBeenCalledWith({
+    expect(tx.school.update).toHaveBeenCalledWith({
       where: { id: p.schoolId, brandingVersion: 1 },
-      data: { name: 'New school', brandingVersion: { increment: 1 } }
+      data: { name: 'New school', brandingVersion: { increment: 1 } },
+      select: { id: true, name: true, logoPresent: true, brandingVersion: true }
     });
-    expect(tx.user.updateMany).toHaveBeenCalledWith({
+    expect(tx.user.update).toHaveBeenCalledWith({
       where: { id: p.userId, profileVersion: 1 },
-      data: { displayName: 'New admin', profileVersion: { increment: 1 } }
+      data: { displayName: 'New admin', profileVersion: { increment: 1 } },
+      select: { id: true, displayName: true, profileVersion: true }
     });
-    expect(audit.record).toHaveBeenCalledTimes(2);
+    expect(audit.recordMany).toHaveBeenCalledTimes(1);
   });
   it('rejects a stale profile before changing school data', async () => {
     const { service, tx, audit } = setup();
     await expect(
       service.saveAll(p, 'r', { ...combined, profileVersion: 2 })
     ).rejects.toThrow('Reload');
-    expect(tx.school.updateMany).not.toHaveBeenCalled();
-    expect(audit.record).not.toHaveBeenCalled();
+    expect(tx.school.update).not.toHaveBeenCalled();
+    expect(audit.recordMany).not.toHaveBeenCalled();
   });
   it('rejects the entire transaction if the profile conflicts after the school update', async () => {
     const { service, tx, audit } = setup();
-    tx.user.updateMany.mockResolvedValue({ count: 0 });
+    tx.user.update.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('conflict', {
+        code: 'P2025',
+        clientVersion: '5'
+      })
+    );
     await expect(service.saveAll(p, 'r', combined)).rejects.toThrow('Reload');
-    expect(audit.record).not.toHaveBeenCalled();
+    expect(audit.recordMany).not.toHaveBeenCalled();
   });
   it('does not write or audit when nothing changed', async () => {
     const { service, tx, audit } = setup();
@@ -84,9 +113,9 @@ describe('current-school settings invariants', () => {
       name: 'School',
       displayName: 'Admin'
     });
-    expect(tx.school.updateMany).not.toHaveBeenCalled();
-    expect(tx.user.updateMany).not.toHaveBeenCalled();
-    expect(audit.record).not.toHaveBeenCalled();
+    expect(tx.school.update).not.toHaveBeenCalled();
+    expect(tx.user.update).not.toHaveBeenCalled();
+    expect(audit.recordMany).not.toHaveBeenCalled();
   });
   it('denies combined writes and invalid logo intent before starting a transaction', async () => {
     const { service, repo } = setup();
