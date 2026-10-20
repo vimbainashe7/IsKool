@@ -109,6 +109,9 @@ jobs:
       - name: Run RLS foundation integration tests
         run: npm run db:rls:test
 
+      - name: Run restricted-role student enrollment integration tests
+        run: npm run db:master-data:test
+
       - name: Run auth foundation integration tests
         run: npm run db:auth:test
 

@@ -71,6 +71,8 @@ The Windows launcher independently selects Node 22/24, validates non-production 
 Unchanged backend sources reuse a verified build. The first frontend compilation on an 8 GB Windows laptop can take several minutes; startup prints its wait and allows up to five minutes before failing. Free memory by closing unused apps if worker startup or compilation times out.
 On a memory-constrained laptop, stop the dev launcher with Ctrl+C while running unit tests or production builds, then restart it for live browser acceptance.
 
+If your prompt currently ends in `\frontend_base>`, first return to the root with `cd ..` (or use the absolute `cd` above). Do not run `cd frontend_base` while already in that directory. Do not use `pnpm dev` for the connected acceptance session: that starts only Next.js and leaves APS/SAMS unavailable. If an older launcher is still running, stop that terminal with `Ctrl+C` before starting a new one. A successful connected start prints `READY aps`, `READY sams`, `READY frontend`, and then `PASS LIVE IsKool ready`.
+
 ### Start backend separately
 
 ```powershell
@@ -124,7 +126,11 @@ A button fills the real email field and applies your manually entered password. 
 
 Fixtures must already exist. Startup never seeds. Only after the owner verifies the target is development/staging and authorizes fixture writes, use the guarded `npm run db:seed:dev` command. Do not mutate an unknown hosted project.
 
-Live authentication is implemented. Academic dashboard projection APIs remain future domain work: an empty academic dashboard after successful sign-in is an honest current state, not proof that assignments, grades or attendance are complete.
+The Admin dashboard and Enrollment overview read SAMS student records, active enrollments and school classes from PostgreSQL. Student records are separate from sign-in memberships. Enrolled Students counts distinct active students with at least one active enrollment across academic terms; Class Enrollments counts active enrollment rows. Withdrawn/pending enrollments do not count as active. School Classes includes all academic years. Totals are database aggregates, independent of paginated lists.
+
+To verify updates: Admin → Students → create a student → open its record → select a class and term → enroll as Active → Dashboard, then reload. Students and Enrolled Students must increase. Enrollment shows the same totals and persisted enrollment history; open its student link to change status. Withdrawal decreases active enrollment counts and retains history. Acceptance-test records are actual development database records and can be edited/archived through Students; close open enrollments before archiving. Startup never inserts sample records or resets your data.
+
+Teacher/account administration, teaching assignments, academic work, timetable, attendance and finance projections remain future domain work. Their live views must show Unavailable instead of sample rows or inferred zero totals. A failed SAMS request also displays unavailable with retry; it is never presented as an empty school.
 
 ### Full acceptance
 
@@ -166,6 +172,8 @@ Live tests require the live APIs and approved fixture identities. Demo workflow 
 | Missing root package.json | Confirm `Get-Location`, `git branch --show-current`, and `Test-Path package.json`. Use the full canonical checkout, not an old frontend branch. Preserve local changes before switching. |
 | Missing npm script | Backend scripts run at root; `pnpm dev` runs in frontend_base. Inspect `npm run` in the correct folder. |
 | Port 3000/3001/3002 occupied | Run `npm run dev:check`. Inspect the identified checkout, PID and command. Reuse a compatible healthy server or stop its known terminal with Ctrl+C. Never blindly taskkill node.exe. |
+| Launcher prints `Command failed: /d` before starting services | Stop that terminal with `Ctrl+C`, return to the repository root, and rerun `npm run dev:iskool`; the current launcher executes pnpm with pinned Node 24 and no `/d` shell wrapper. |
+| Sign-in renders but `/api/auth/login` returns 404 | Stop the connected launcher with `Ctrl+C`. Preserve the generated cache with `Rename-Item -LiteralPath frontend_base/.next/dev -NewName ('dev-backup-' + (Get-Date -Format yyyyMMddHHmmss))` from the root, then rerun `npm run dev:iskool`. This regenerates development build output; it does not change source, environment files or database records. The launcher now verifies the login route as well as the sign-in page. |
 | Missing Prisma client | With Node 22 at root run `npm ci`, then `npm run prisma:generate`. Generate does not migrate. |
 | Unsupported Node | Backend requires 22; frontend toolchain requires 24. Use independent pinned executables; do not switch a running nvm symlink. |
 | Database unreachable | Check VPN/network, the session-pooler hostname/port, database password, ssl settings and project status. Run the doctor. Do not substitute a fake DB. |

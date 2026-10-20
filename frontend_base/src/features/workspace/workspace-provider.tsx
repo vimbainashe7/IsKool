@@ -35,6 +35,9 @@ export function WorkspaceProvider({
     serverSnapshot
   )
   const [data, setData] = useState(initial)
+  useEffect(() => {
+    setData(initial)
+  }, [initial])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
   const [offline, setOffline] = useState(false)

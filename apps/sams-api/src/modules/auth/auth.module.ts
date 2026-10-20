@@ -9,6 +9,6 @@ import { ServiceAccessPolicy } from './service-access.policy';
 @Module({
   controllers: [AuthController],
   providers: [AuthPrismaService, AuthRepository, AuthService, ServiceAccessPolicy, ServiceAuthGuard],
-  exports: [AuthService, ServiceAccessPolicy]
+  exports: [AuthService, ServiceAccessPolicy, ServiceAuthGuard, AuthRepository]
 })
 export class AuthModule {}

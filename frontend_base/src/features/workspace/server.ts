@@ -1,11 +1,18 @@
 import "server-only"
 import { z } from "zod"
+import { cookies } from "next/headers"
+import { randomUUID } from "node:crypto"
+import { getIsKoolApiUrls, iskoolAuthCookies } from "@/lib/iskool-auth/shared"
 import type { IsKoolContext } from "@/features/context/session-contract"
 import { createClient } from "@/lib/supabase/server"
 import { isIsKoolAuthConfigured } from "@/lib/iskool-auth/shared"
 import { canUseDemoSession } from "@/dev/demo-session"
 import { readDemoWorkspace } from "@/dev/workspace-store"
-import { workspaceSchema, type Workspace } from "./contracts"
+import {
+  studentSummarySchema,
+  workspaceSchema,
+  type Workspace,
+} from "./contracts"
 const dbId = z.string().uuid()
 const classRow = z.object({
   id: dbId,
@@ -55,8 +62,33 @@ export async function loadWorkspace(
   const client = await createClient()
   if (!context.membershipId)
     throw new Error("Your school workspace is not available.")
-  if (!client && isIsKoolAuthConfigured())
+  if (isIsKoolAuthConfigured()) {
+    let studentSummary = null
+    if (context.activeRole === "admin") {
+      try {
+        const token = (await cookies()).get(iskoolAuthCookies.samsAccess)?.value
+        if (!token) throw new Error("No SAMS session")
+        const response = await fetch(
+          `${getIsKoolApiUrls().sams}/student-administration/summary`,
+          {
+            cache: "no-store",
+            signal: AbortSignal.timeout(
+              process.env.NODE_ENV === "development" ? 30_000 : 10_000
+            ),
+            headers: {
+              authorization: `Bearer ${token}`,
+              "x-request-id": randomUUID(),
+            },
+          }
+        )
+        if (!response.ok) throw new Error("School summary unavailable")
+        studentSummary = studentSummarySchema.parse(await response.json())
+      } catch {
+        /* The UI renders unavailable, never fabricated zero totals. */
+      }
+    }
     return workspaceSchema.parse({
+      studentSummary,
       asOf: new Date().toISOString(),
       mode: "live",
       userId: context.user.id,
@@ -76,9 +108,15 @@ export async function loadWorkspace(
       drafts: [],
       audit: [],
       warnings: [
-        "Your verified school identity is live. Academic projections are not available from the backend yet.",
+        ...(context.activeRole === "admin" && !studentSummary
+          ? [
+              "Student and enrollment totals could not be loaded. Retry loading records.",
+            ]
+          : []),
+        "Academic work, timetable, staff assignments and account administration projections are not available yet.",
       ],
     })
+  }
   if (!client) throw new Error("Your school workspace is not available.")
   const role = context.activeRole
   const school = context.school.id

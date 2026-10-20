@@ -1,8 +1,19 @@
 "use client"
+import { StudentAdministration } from "@/features/students/student-administration"
+import {
+  EnrollmentOverview,
+  SchoolClassOverview,
+} from "@/features/students/enrollment-overview"
+import { useWorkspace } from "@/features/workspace/workspace-provider"
 import { AdminPeople, AdminClasses } from "@/features/admin/admin-workspace"
 import type { WorkspaceViewKey } from "@/features/workspace/workspace-view"
 import type { Capability } from "@/lib/permissions/capabilities"
-import { AdminAccess, AdminPageHeader, AdminLink } from "./admin-components"
+import {
+  AdminAccess,
+  AdminPageHeader,
+  AdminLink,
+  AdminSectionCard,
+} from "./admin-components"
 import { AdminDashboard } from "./admin-dashboard"
 import {
   AdminPageMetrics,
@@ -21,7 +32,8 @@ const descriptions: Partial<Record<WorkspaceViewKey, string>> = {
   class:
     "Review teaching assignments, enrolled students and scheduled lessons.",
   users: "Review school memberships, invitations and confirmed access changes.",
-  students: "Review student memberships and current class enrollment.",
+  students:
+    "Create student records, link guardians and manage enrollment history.",
   teachers: "Review teaching memberships and school class assignments.",
   enrollments: "Review current class enrollment and assign active students.",
   roles: "Review defined roles and confirm changes to school access.",
@@ -44,8 +56,29 @@ export function AdminWorkspace({
   school: string
   capabilities: readonly Capability[]
 }) {
+  const { data: workspace } = useWorkspace()
+  const liveStudents = view === "students" && workspace.mode === "live"
   let content
-  if (["users", "students", "teachers", "roles"].includes(view))
+  if (liveStudents)
+    content = (
+      <StudentAdministration
+        key={resourceId ?? "list"}
+        studentId={resourceId}
+      />
+    )
+  else if (
+    workspace.mode === "live" &&
+    ["users", "teachers", "roles", "class", "audit", "timetable"].includes(view)
+  )
+    content = (
+      <AdminSectionCard title="Records unavailable">
+        <p>
+          This school workflow is not connected yet. No records or totals are
+          inferred from missing data.
+        </p>
+      </AdminSectionCard>
+    )
+  else if (["users", "students", "teachers", "roles"].includes(view))
     content = (
       <>
         {view === "roles" && <AdminRoleDefinitions />}
@@ -56,7 +89,16 @@ export function AdminWorkspace({
         />
       </>
     )
-  else if (view === "admin-classes") content = <AdminClasses />
+  else if (view === "admin-classes")
+    content =
+      workspace.mode === "live" ? <SchoolClassOverview /> : <AdminClasses />
+  else if (view === "enrollments" && workspace.mode === "live")
+    content = (
+      <>
+        <AdmissionsPipelineCard />
+        <EnrollmentOverview />
+      </>
+    )
   else if (view === "enrollments")
     content = (
       <>
@@ -102,7 +144,11 @@ export function AdminWorkspace({
                 </AdminLink>
               ) : view === "admin-classes" ? (
                 <AdminLink
-                  href="#create-class"
+                  href={
+                    workspace.mode === "live"
+                      ? "/admin/students"
+                      : "#create-class"
+                  }
                   capability="classes.manage"
                   className={styles.headerAction}
                 >
@@ -110,7 +156,11 @@ export function AdminWorkspace({
                 </AdminLink>
               ) : view === "enrollments" ? (
                 <AdminLink
-                  href="#assign-teacher"
+                  href={
+                    workspace.mode === "live"
+                      ? "/admin/students"
+                      : "#assign-teacher"
+                  }
                   capability="enrollments.manage"
                   className={styles.headerAction}
                 >
@@ -119,11 +169,14 @@ export function AdminWorkspace({
               ) : undefined)
             }
           />
-          {!resourceId && <AdminPageMetrics view={view} title={title} />}
+          {!resourceId && !liveStudents && (
+            <AdminPageMetrics view={view} title={title} />
+          )}
           {content}
           <p className={styles.note}>
-            Counts reflect the school records currently loaded in your
-            workspace.
+            {liveStudents
+              ? "Student records are saved in your school registry."
+              : "Counts reflect the school records currently loaded in your workspace."}
           </p>
         </div>
       )}

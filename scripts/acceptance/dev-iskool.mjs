@@ -6,6 +6,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { createConnection } from 'node:net';
 import { readLocalEnv } from './helpers/local-env.mjs';
 import { samePrismaSchema } from './helpers/preflight.mjs';
+import { backendIsLive, frontendRoutesReady } from './helpers/readiness.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 // Prisma may load the env path recorded by the last generated client. Keep each
@@ -21,7 +22,10 @@ const hash = (value) => createHash('sha256').update(value).digest('hex');
 function fail(message) { throw new Error(message); }
 function run(exe, args, options = {}) {
   const result = spawnSync(exe, args, { cwd: root, encoding: 'utf8', ...options });
-  if (result.error || result.status !== 0) fail(`Command failed: ${args[0]}. See the output above and README troubleshooting.`);
+  if (result.error || result.status !== 0) {
+    const detail = result.error?.message ?? result.stderr?.trim();
+    fail(`Command failed: ${exe} ${args.join(' ')}${detail ? ` (${detail})` : ''}. See the output above and README troubleshooting.`);
+  }
   return result.stdout?.trim();
 }
 function runtime(major, variable) {
@@ -109,7 +113,7 @@ async function healthy(service) {
   try {
     const response = await fetch(service.url, { signal: AbortSignal.timeout(service.kind === 'frontend' ? 30000 : 10000), redirect: 'manual' });
     if (!response.ok) return false;
-    if (service.kind === 'frontend') return (await response.text()).includes('Welcome back');
+    if (service.kind === 'frontend') return (await response.text()).includes('Welcome back') && await frontendRoutesReady(service.url);
     const body = await response.json();
     return body.status === 'ok' && body.dependencies?.database === 'ok' && ['ok', 'disabled'].includes(body.dependencies?.redis);
   } catch { return false; }
@@ -135,7 +139,13 @@ try {
   const node24 = backendOnly ? null : runtime(24, 'ISKOOL_NODE24');
   const head = run('git', ['rev-parse', 'HEAD']);
   if (node22) run(node22, [join(dirname(node22), 'node_modules/npm/bin/npm-cli.js'), '--version']);
-  if (node24) console.log(`pnpm ${run('cmd.exe', ['/d', '/s', '/c', 'pnpm --version'], { env: { ...inheritedEnv, PATH: `${dirname(node24)};${inheritedEnv.PATH}` } })}`);
+  if (node24) {
+    // Avoid cmd.exe's pnpm wrapper: on some Windows installations it resolves
+    // `/d` as the command and exits before APS/SAMS can start.
+    const pnpmCli = join(process.env.APPDATA ?? '', 'npm/node_modules/pnpm/bin/pnpm.mjs');
+    if (!existsSync(pnpmCli)) fail('pnpm is missing. From frontend_base run pnpm install --frozen-lockfile with Node 24.');
+    console.log(`pnpm ${run(node24, [pnpmCli, '--version'], { env: { ...inheritedEnv, PATH: `${dirname(node24)};${inheritedEnv.PATH}` } })}`);
+  }
   const services = [];
   if (!frontendOnly) {
     if (!existsSync(join(root, 'node_modules/.prisma/client/index.js'))) fail('Prisma client missing. With Node 22 run npm ci, then npm run prisma:generate.');
@@ -216,9 +226,17 @@ try {
       probing = true;
       try {
         for (const service of services) {
-          service.failures = await healthy(service) ? 0 : (service.failures ?? 0) + 1;
-          if (service.failures) console.error(`${service.kind}: readiness failed (${service.failures}/3); checking again.`);
-          if (service.failures >= 3) { console.error(`${service.kind} lost readiness.`); clearInterval(monitor); stop(1); break; }
+          const previousFailures = service.failures ?? 0;
+          service.failures = await healthy(service) ? 0 : previousFailures + 1;
+          if (!service.failures && previousFailures) console.log(`RECOVERED ${service.kind}: readiness verified again.`);
+          if (service.failures) console.error(`${service.kind}: readiness failed (${service.failures} consecutive probes); checking again.`);
+          if (service.failures >= 3) {
+            if (await backendIsLive(service)) {
+              console.error(`DEGRADED ${service.kind}: API is live but dependencies are not ready. Requests may fail; services remain running while readiness is retried.`);
+            } else {
+              console.error(`${service.kind} lost readiness and liveness.`); clearInterval(monitor); stop(1); break;
+            }
+          }
         }
       } finally { probing = false; }
     }, 15000);

@@ -50,11 +50,9 @@ export function SiteHeader({ context }: { context: IsKoolContext }) {
               <Link href="/home">Home</Link>
               <span aria-hidden="true"> / </span>
               <span className="capitalize">
-                {pathname
-                  .split("/")
-                  .filter(Boolean)
-                  .slice(-1)[0]
-                  ?.replace(/-/g, " ")}
+                {pathname.startsWith("/admin/students/")
+                  ? "Student record"
+                  : pathname.split("/").filter(Boolean).slice(-1)[0]?.replace(/-/g, " ")}
               </span>
             </nav>
           </div>

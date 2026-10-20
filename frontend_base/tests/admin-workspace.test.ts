@@ -3,6 +3,31 @@ import { createWorkspaceFixture } from "@/dev/workspace-fixture"
 import { adminModel, schoolWeekday } from "@/features/admin-workspace/model"
 
 describe("admin workspace projections", () => {
+  it("uses complete SAMS aggregates independently of loaded membership pages", () => {
+    const w = createWorkspaceFixture()
+    w.mode = "live"
+    w.studentSummary = {
+      students: 101,
+      activeStudents: 100,
+      enrolledStudents: 80,
+      activeEnrollments: 160,
+      withoutClass: 20,
+      classes: 12,
+    }
+    expect(adminModel(w).studentTotals).toEqual(w.studentSummary)
+    w.studentSummary = null
+    expect(adminModel(w).studentTotals).toBeNull()
+  })
+  it("does not report empty live projection arrays as real zero records", () => {
+    const w = createWorkspaceFixture()
+    w.mode = "live"
+    w.members = []
+    w.timetable = []
+    w.audit = []
+    expect(adminModel(w).peopleAvailable).toBe(false)
+    expect(adminModel(w).timetableAvailable).toBe(false)
+    expect(adminModel(w).auditAvailable).toBe(false)
+  })
   it("does not infer a missing teacher when the membership is outside loaded records", () => {
     const w = createWorkspaceFixture()
     w.teachers = [

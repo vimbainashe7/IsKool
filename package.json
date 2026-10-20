@@ -50,9 +50,11 @@
     "db:inspect:safe": "node scripts/acceptance/db-inspect.mjs",
     "db:provision:remote-dev": "node scripts/acceptance/provision-remote-dev-logins.mjs",
     "db:seed:dev": "node scripts/acceptance/seed-dev.mjs",
+    "smoke:vim-51": "node scripts/acceptance/vim-51.mjs",
     "smoke:auth": "node scripts/acceptance/m2-auth.mjs",
     "smoke:authorization": "npm run build:packages && node scripts/acceptance/m2-security.mjs",
     "smoke:audit": "node scripts/acceptance/m2-audit.mjs",
+    "db:master-data:test": "node scripts/test-sams-master-data.mjs",
     "db:rls:test": "node scripts/test-rls-foundation.mjs",
     "db:auth:test": "node scripts/test-auth-foundation.mjs",
     "db:drift:check": "node scripts/check-prisma-drift.mjs",
@@ -60,7 +62,7 @@
     "dev:frontend": "node scripts/acceptance/dev-iskool.mjs --frontend",
     "dev:check": "node scripts/acceptance/dev-iskool.mjs --check",
     "check:secrets": "node scripts/acceptance/check-secrets.mjs",
-    "test:dev": "node --test scripts/acceptance/local-env.test.mjs"
+    "test:dev": "node --test scripts/acceptance/local-env.test.mjs scripts/acceptance/readiness.test.mjs"
   },
   "devDependencies": {
     "supabase": "^2.119.0"

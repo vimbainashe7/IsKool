@@ -10,7 +10,7 @@ export function prismaClientGenerated() {
 export function samePrismaSchema(left, right) {
   // Prisma aligns fields while generating. Compare tokens, preserving spaces
   // inside quoted defaults rather than treating formatting as stale generation.
-  const tokens = (source) => source.match(/"(?:\\.|[^"\\])*"|[^\s"]+/g)?.join('\0');
+  const tokens = (source) => source.match(/"(?:\\.|[^"\\])*"|[A-Za-z_]\w*|\d+(?:\.\d+)?|[^\s]/g)?.join('\0');
   return tokens(left) === tokens(right);
 }
 

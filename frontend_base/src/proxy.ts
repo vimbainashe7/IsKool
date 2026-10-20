@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server'
 
 import { canUseDemoSession, demoSessionCookie } from '@/dev/demo-session'
 import {
+  IsKoolAuthError,
   fetchIsKoolContext,
   refreshIsKoolSession,
 } from '@/lib/iskool-auth/server'
@@ -23,6 +24,14 @@ const publicRoutes = new Set([
   '/auth/callback',
   '/reset-password',
 ])
+
+function authenticationUnavailable(request: NextRequest) {
+  const message = 'IsKool is temporarily unavailable. Reload this page to try again. Your session has been preserved.'
+  const headers = { 'Cache-Control': 'private, no-store', 'Retry-After': '5' }
+  return request.nextUrl.pathname.startsWith('/api/')
+    ? NextResponse.json({ error: message }, { status: 503, headers })
+    : new NextResponse(message, { status: 503, headers: { ...headers, 'Content-Type': 'text/plain; charset=utf-8' } })
+}
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
@@ -52,7 +61,11 @@ export async function proxy(request: NextRequest) {
     try {
       await fetchIsKoolContext(currentTokens)
       authenticated = true
-    } catch {
+    } catch (error) {
+      // Dependency outages must not rotate credentials or destroy a session.
+      if (!(error instanceof IsKoolAuthError) || error.status !== 401) {
+        return authenticationUnavailable(request)
+      }
       const refreshToken = request.cookies.get(iskoolAuthCookies.refresh)?.value
       if (refreshToken) {
         try {
@@ -84,7 +97,10 @@ export async function proxy(request: NextRequest) {
             else response.cookies.delete(name)
           })
           authenticated = true
-        } catch {
+        } catch (error) {
+          if (!(error instanceof IsKoolAuthError) || ![401, 403].includes(error.status)) {
+            return authenticationUnavailable(request)
+          }
           Object.values(iskoolAuthCookies).forEach((name) => {
             request.cookies.delete(name)
             response.cookies.delete(name)

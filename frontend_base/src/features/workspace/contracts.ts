@@ -80,7 +80,16 @@ export const draftSchema = z.object({
   status: z.enum(["draft", "reviewed", "published", "archived"]),
   sourceIds: z.array(id),
 })
+export const studentSummarySchema = z.object({
+  students: z.number().int().nonnegative(),
+  activeStudents: z.number().int().nonnegative(),
+  enrolledStudents: z.number().int().nonnegative(),
+  activeEnrollments: z.number().int().nonnegative(),
+  withoutClass: z.number().int().nonnegative(),
+  classes: z.number().int().nonnegative(),
+})
 export const workspaceSchema = z.object({
+  studentSummary: studentSummarySchema.nullable().optional(),
   asOf: z.string(),
   mode: z.enum(["demo", "live"]),
   userId: id,
