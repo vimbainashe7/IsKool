@@ -59,6 +59,7 @@
     "db:auth:test": "node scripts/test-auth-foundation.mjs",
     "db:drift:check": "node scripts/check-prisma-drift.mjs",
     "dev:iskool": "node scripts/acceptance/dev-iskool.mjs",
+    "smoke:vim-71": "node scripts/acceptance/vim-71.mjs",
     "dev:frontend": "node scripts/acceptance/dev-iskool.mjs --frontend",
     "dev:check": "node scripts/acceptance/dev-iskool.mjs --check",
     "check:secrets": "node scripts/acceptance/check-secrets.mjs",

@@ -114,7 +114,9 @@ Both readiness responses must report `status=ok`, `database=ok` and `redis=disab
 
 ### Developer sign-in
 
-Open `/sign-in`. In **Development accounts**, enter the seed password configured in the ignored backend `DEV_SEED_PASSWORD` once for the current page. The password comes from the developer who configured the approved development fixtures, not from Supabase or frontend source.
+Open `/sign-in`. In this canonical development checkout, the existing shared demo password and account emails are written in local **`Passwords.txt`** at the repository root. Open it with `notepad .\Passwords.txt`. This file is Git-ignored and must stay local; it is not part of a fresh clone. If absent, obtain the configured development credential from the project owner. It matches the ignored backend `DEV_SEED_PASSWORD`; do not rotate or reseed accounts merely to sign in.
+
+In **Development accounts**, paste that password into **Development seed password**, select Student, Teacher or Admin, then click **Sign in**. Selecting a role only fills the form. Public authentication screens keep their readable light palette even when the saved workspace preference is dark.
 
 | Button | Email filled |
 | --- | --- |
@@ -131,6 +133,14 @@ The Admin dashboard and Enrollment overview read SAMS student records, active en
 To verify updates: Admin → Students → create a student → open its record → select a class and term → enroll as Active → Dashboard, then reload. Students and Enrolled Students must increase. Enrollment shows the same totals and persisted enrollment history; open its student link to change status. Withdrawal decreases active enrollment counts and retains history. Acceptance-test records are actual development database records and can be edited/archived through Students; close open enrollments before archiving. Startup never inserts sample records or resets your data.
 
 Teacher/account administration, teaching assignments, academic work, timetable, attendance and finance projections remain future domain work. Their live views must show Unavailable instead of sample rows or inferred zero totals. A failed SAMS request also displays unavailable with retry; it is never presented as an empty school.
+
+### School identity and white-label settings
+
+Admin → Settings → Account lets you edit your display name, school name and logo together. Click **Save changes** once; a green **Settings saved** toast confirms the whole update persisted. Logo selection/removal is a preview until you save. All changes commit together through SAMS/PostgreSQL; validation or stale-version errors preserve the form for correction without a partial update. Saved identity feeds the authenticated sidebar, header, footer, profile name and browser title/favicon across roles after navigation/reload. Other schools keep their own identity. Teacher/Student sessions display branding without Admin mutation rights.
+
+Logos must be PNG/JPEG/WebP, at most 2 MB and 4096×4096 pixels. The server validates/decodes, resizes and re-encodes a small WebP, removes metadata and serves it only to authenticated school members. Removing a logo retains school/account records. Email, credentials, roles, school creation/deletion and tenant-domain routing are separate workflows.
+
+Follow the [VIM-71 walkthrough](docs/acceptance/VIM-71.md). `npm run smoke:vim-71` verifies dedicated branding fixtures; it never seeds, migrates or renames the owner's school. Apply reviewed development migrations before restarting services; never reset a hosted database for testing.
 
 ### Full acceptance
 

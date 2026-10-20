@@ -1,13 +1,25 @@
 # IsKool product delivery
 
-Updated: 2026-10-18 (Africa/Harare).
+Updated: 2026-10-20 (Africa/Harare).
+
+## Current delivery
+
+Owner accepted the revised Settings workflow and explicitly approved merging PR #6 followed by PR #7 on 2026-10-20. Acceptance evidence is recorded on both PRs. VIM-70's three-role human acceptance remains closed.
+
+PR #6 merged into the configured default branch `frontend/workspace-redesigns-2026-10-13` as `81c7c155a05a3fa2d8f8d3b2e75cb36b43314c44`. Its head `81b42e3` had eight passing checks and no unresolved review discussions. Student/guardian/enrollment administration and real Admin counts are implemented, integrated and human accepted. Production release is separate.
+
+PR #7 is retargeted to that default branch and includes the merged base. School identity, own Admin display name and canonical logo persist through one Save changes and one green confirmation. Implementation head `e36a9ff` passed eight checks: SAMS 86 tests, APS 19, frontend 138 unit / 52 browser tests. The complete live Settings journey passed in 5.8 minutes; direct PostgreSQL confirmed persisted versions and paired audits. Final launcher/credential-file handoff passed. History scan: 57 commits, no leaks. The integrated PR head must pass CI before the authorized merge. No further owner approval is required for those two merges.
+
+Linear reconnected on 2026-10-20; reconciliation uses the existing VIM-51, VIM-71 and VIM-52 issues. Next capability: VIM-52, authenticated SAMS internal reads and typed APS client with real authorized class context. Broader academic/finance/file capabilities are not Done. Inherited dependency advisories remain launch blockers.
+
+Identity migrations and scoped runtime security details: `docs/contracts/SCHOOL_IDENTITY_SETTINGS.md`. Owner walkthrough: `docs/acceptance/VIM-71.md`. Earlier integration/debug evidence remains traceable in PR #7 and Git history.
 
 ## Current capability and gate
 
 | Issue | Capability | Dependencies | Implementation | Frontend | Migrations | Verification | GitHub | Human acceptance | Blockers |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | VIM-70 | Reproducible Windows development and real three-role authentication | Existing identity/RLS foundation | PR #5 merged; credential incident remediated in development | Existing live sign-in, dashboards, reload and logout | None in this follow-up | Exact PR head: eight successful checks; local env tests 3/3; redaction regression 1/1; configured-value scan 639 files/assets; post-rotation live browser 6/6 (4.3m); API auth, authorization and audit smoke passed | PR #5 head `95124bcbd96caa7498c116a621d81766523ad806`; merge `5b09fcebadafb98ad2132bc49a6073b95f73ba9c` at 2026-10-18 04:53:07 UTC; no review threads | Owner explicitly accepted Student, Teacher and Admin in this conversation on 2026-10-18; post-rotation automated acceptance passed | Gate closed; inherited dependency vulnerabilities remain release blockers pending triage |
-| VIM-51 (VIM-52 next) | Student, guardian and enrollment administration | VIM-70 closed; SAMS calendar/class ownership | Backend implemented; live Admin CRUD demonstrated; not Done/released | Existing Admin list/detail design integrated with SAMS; desktop/mobile verified | Two additive migrations, `20261018060000` and `20261018061000`, replayed on disposable PostgreSQL and applied only to approved hosted development | 39 new SAMS tests; 10 frontend contract/boundary tests; 5 auth-outage regressions; restricted-role SQL and Prisma drift passed; live CRUD passed (4.0m); live isolation passed; post-fix affected auth cases passed (3/3) after dependency failures | [PR #6](https://github.com/vimbainashe7/IsKool/pull/6), `feat/vim-51-student-enrollment`; eight checks passed at ffa9d30; final-head checks remain required | New Admin workflow acceptance and merge approval pending | Linear restored; VIM-51 In Progress; intermittent hosted dependency latency; remaining release security work |
+| VIM-51 (VIM-52 next) | Student, guardian and enrollment administration | VIM-70 closed; SAMS calendar/class ownership | Backend implemented; live Admin CRUD human accepted; merged, not production released | Existing Admin list/detail design integrated with SAMS; desktop/mobile verified | Two additive migrations, `20261018060000` and `20261018061000`, replayed on disposable PostgreSQL and applied only to approved hosted development | 39 new SAMS tests; 10 frontend contract/boundary tests; 5 auth-outage regressions; restricted-role SQL and Prisma drift passed; live CRUD passed (4.0m); live isolation passed; post-fix affected auth cases passed (3/3) after dependency failures | [PR #6](https://github.com/vimbainashe7/IsKool/pull/6), head `81b42e3`, eight checks passed; merge `81c7c15` | Owner accepted and approved merge on 2026-10-20 | Linear restored; VIM-51 In Progress; intermittent hosted dependency latency; remaining release security work |
 
 ## Credential incident remediation
 
@@ -122,3 +134,7 @@ Added SAMS `GET /api/v1/student-administration/summary` and paginated `GET /api/
 Dashboard and Enrollment consume the real aggregates; Enrollment displays persisted student/class/term/status rows, with pagination and student detail links. Classes reads existing SAMS academic setup. Unsupported account, teacher assignment, timetable and audit projections show unavailable instead of inferred empty data. Student mutations refresh route data. README documents count meanings, persistence acceptance and retained development test records. Existing domain test records are real database records, editable/archivable through the registry.
 
 Verification results and latest commit/CI are recorded on PR #6. Local frontend suite: 133 passed; targeted SAMS service invariants: 11 passed; backend/frontend typechecks passed before final formatting. Browser verification pending at this checkpoint. VIM-51 remains In Progress; the new overview has not yet been human accepted or merged. Next capability remains VIM-52 APS/SAMS internal context after this PR's acceptance gate.
+
+### VIM-71 acceptance refinement: single Settings save
+
+Owner confirmed the identity/branding workflow worked, then requested one Save instead of three. The interface now batches display name, school name and optional logo changes into one explicit **Save changes**, with a green confirmation only after success. SAMS checks both versions and commits all changes/audits atomically; logo removal is a reversible draft until saved. No new migration or RLS grants. Local settings/audit invariant tests: 12 passed. The first live combined save exposed sensitivity to hosted latency; UPDATE RETURNING and batched audit inserts reduce the transaction from nine database round trips to seven without changing timeouts. Latest CI, live browser and database evidence are recorded on PR #7. Owner accepted the single-save UX and approved merge on 2026-10-20. Integrated-head checks precede the authorized PR #7 merge.

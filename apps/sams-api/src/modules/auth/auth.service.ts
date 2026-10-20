@@ -8,7 +8,7 @@ import {
   testPasswordHashOptions
 } from '@aps-sams/auth';
 import { authConfig } from '../../config/auth.config';
-import { AuthenticationRequiredError, BusinessRuleError } from '../../common/errors/application-error';
+import { AuthenticationRequiredError, BusinessRuleError, ResourceNotFoundError } from '../../common/errors/application-error';
 import { AuthRepository } from './auth.repository';
 import { ActiveMembership, AuthSessionContext, LoginResponse, RefreshResponse, SchoolSelectionResponse } from './auth.types';
 import { LoginDto } from './dto/login.dto';
@@ -162,6 +162,11 @@ export class AuthService {
       throw new AuthenticationRequiredError();
     }
     return context;
+  }
+  async schoolLogo(principal: AuthPrincipal) {
+    const logo = await this.repository.schoolLogo(principal);
+    if (!logo) throw new ResourceNotFoundError('No logo has been saved for your school.');
+    return logo;
   }
 
   private resolveMembership(memberships: readonly ActiveMembership[], schoolId?: string): ActiveMembership {

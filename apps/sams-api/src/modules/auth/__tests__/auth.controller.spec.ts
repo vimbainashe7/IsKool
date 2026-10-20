@@ -1,7 +1,7 @@
 import { generateKeyPairSync } from 'node:crypto';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
+import request from 'supertest';
 import { JwtTokenService } from '@aps-sams/auth';
 import { AppModule } from '../../../app.module';
 import { GlobalExceptionFilter } from '../../../common/filters/global-exception.filter';

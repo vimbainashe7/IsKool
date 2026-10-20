@@ -80,6 +80,7 @@ export interface AuthSessionContext {
   readonly school: {
     readonly id: string;
     readonly name: string;
+    readonly logoUrl?: string;
   };
   readonly membershipId: string;
   readonly roles: readonly string[];

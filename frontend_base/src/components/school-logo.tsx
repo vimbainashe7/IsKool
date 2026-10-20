@@ -59,7 +59,7 @@ export function SchoolLogo({
       </div>
       {showName && (
         <span className="min-w-0 leading-tight">
-          <span className={cn("block truncate text-sm font-bold", inverse ? "text-iskool-cream" : "text-iskool-navy")}>
+          <span className={cn("block truncate text-sm font-bold", inverse ? "text-iskool-cream" : "text-iskool-navy dark:text-foreground")}>
             {school.name}
           </span>
           {subtitle && (

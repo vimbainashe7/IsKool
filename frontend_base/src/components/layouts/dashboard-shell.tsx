@@ -29,7 +29,7 @@ export function DashboardShell({
         >
           {children}
         </main>
-        <SiteFooter />
+        <SiteFooter schoolName={context.school.name} />
       </SidebarInset>
     </SidebarProvider>
   )

@@ -1,10 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { AuthPrincipal, ServiceScope } from '@aps-sams/auth';
 import { AuthPrismaService } from './auth-prisma.service';
+const schoolIdentity = {id:true,name:true,status:true,logoPresent:true,brandingVersion:true} as const;
 import { AuthSessionContext, IssuedAuthSession, LoginCandidate, RotatedRefreshSession } from './auth.types';
 
 @Injectable()
 export class AuthRepository {
+  async schoolLogo(p: AuthPrincipal): Promise<Buffer|null> {
+    const school = await this.prisma.school.findFirst({where:{id:p.schoolId,status:'active'},select:{logoDataUrl:true}});
+    return school?.logoDataUrl ? Buffer.from(school.logoDataUrl.split(',')[1],'base64') : null;
+  }
   constructor(private readonly prisma: AuthPrismaService) {}
 
   async findLoginCandidate(emailNormalized: string): Promise<LoginCandidate | null> {
@@ -18,7 +23,7 @@ export class AuthRepository {
             school: { status: 'active' }
           },
           include: {
-            school: true,
+            school: {select:schoolIdentity},
             membershipRoles: {
               include: { role: true }
             }
@@ -115,7 +120,7 @@ export class AuthRepository {
         user: true,
         membership: {
           include: {
-            school: true,
+            school: {select:schoolIdentity},
             membershipRoles: {
               include: { role: true }
             }
@@ -156,7 +161,7 @@ export class AuthRepository {
         user: true,
         membership: {
           include: {
-            school: true,
+            school: {select:schoolIdentity},
             membershipRoles: { include: { role: true } }
           }
         }
@@ -180,7 +185,8 @@ export class AuthRepository {
       },
       school: {
         id: session.membership.school.id,
-        name: session.membership.school.name
+        name: session.membership.school.name,
+        ...(session.membership.school.logoPresent ? {logoUrl:`/api/school-logo?v=${session.membership.school.brandingVersion}`} : {})
       },
       membershipId: session.membership.id,
       roles: session.membership.membershipRoles.map((membershipRole) => membershipRole.role.key).sort()
@@ -235,7 +241,7 @@ export class AuthRepository {
           user: true,
           membership: {
             include: {
-              school: true,
+            school: {select:schoolIdentity},
               membershipRoles: { include: { role: true } }
             }
           }

@@ -78,7 +78,7 @@ try {
   for (const [email, displayName, memberships] of users) {
     const user = await prisma.user.upsert({
       where: { emailNormalized: normalizeEmail(email) },
-      update: { email, displayName, status: 'active' },
+      update: { email, displayName, status: 'active', profileVersion: { increment: 1 } },
       create: {
         email,
         emailNormalized: normalizeEmail(email),

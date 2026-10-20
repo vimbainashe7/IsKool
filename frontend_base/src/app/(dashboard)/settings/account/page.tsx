@@ -4,7 +4,19 @@ import { TeacherSectionCard } from "@/features/teacher-workspace/teacher-compone
 import styles from "@/features/teacher-workspace/teacher-workspace.module.css"
 import Link from "next/link"
 export default async function Page() {
-  const { context } = await requireSession()
+  const { context, status } = await requireSession()
+  if (status === "iskool" && context.activeRole === "admin")
+    return (
+      <section className="space-y-4 px-5">
+        <h2 className="text-xl font-semibold">Appearance and session</h2>
+        <ModeToggle />
+        <form action="/logout" method="post">
+          <button type="submit" className="rounded-lg border px-4 py-3">
+            Sign out
+          </button>
+        </form>
+      </section>
+    )
   if (context.activeRole === "teacher")
     return (
       <div className={`${styles.twoColumns} mt-6`}>
