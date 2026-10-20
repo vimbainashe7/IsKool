@@ -98,7 +98,7 @@ export function AuthorizedClasses({
         <CardHeader>
           <div className="flex items-center gap-3">
             <BookOpen className="size-6 text-primary" />
-            <CardTitle>
+            <CardTitle role="heading" aria-level={2}>
               {resourceId
                 ? "Class details"
                 : role === "student"
@@ -137,7 +137,8 @@ export function AuthorizedClasses({
             <p className="flex items-center gap-3 text-lg">
               <GraduationCap className="size-5" />
               <strong>{data.totalClasses}</strong>{" "}
-              {role === "student" ? "enrolled classes" : "assigned classes"}
+              {role === "student" ? "enrolled" : "assigned"}{" "}
+              {data.totalClasses === 1 ? "class" : "classes"}
             </p>
           )}
           {data?.student && (
@@ -170,7 +171,9 @@ export function AuthorizedClasses({
           {data.classes.map((schoolClass) => (
             <Card key={schoolClass.id}>
               <CardHeader>
-                <CardTitle>{schoolClass.name}</CardTitle>
+                <CardTitle role="heading" aria-level={2}>
+                  {schoolClass.name}
+                </CardTitle>
                 <CardDescription>
                   {schoolClass.academicYear.label}
                 </CardDescription>
@@ -184,7 +187,7 @@ export function AuthorizedClasses({
                 {role === "teacher" && schoolClass.studentCount !== null && (
                   <p className="flex items-center gap-2">
                     <UsersRound className="size-4" />
-                    {schoolClass.studentCount} actively enrolled students
+                    Active students: {schoolClass.studentCount}
                   </p>
                 )}
                 {resourceId ? (

@@ -66,7 +66,41 @@ test.describe("live APS to SAMS authorized class context", () => {
     const suffix = Date.now().toString(),
       yearNumber = new Date().getFullYear(),
       className = `Context ${suffix}`
+    // Only unlink this smoke's own earlier fixture; never take over an owner's record.
+    await signIn(page, "Student")
+    const previousResponse = await page.request.get(
+      "/api/academic-context?role=student"
+    )
+    expect(previousResponse.status()).toBe(200)
+    const previous = (await previousResponse.json()).student
+    if (
+      previous &&
+      (!previous.admissionNumber.startsWith("CTX-") ||
+        previous.givenName !== "Context")
+    )
+      throw new Error(
+        "Student Alpha is linked to an owner-managed record. Do not reassign it through smoke testing."
+      )
+    await logout(page)
     await signIn(page, "Admin")
+    if (previous) {
+      await page.goto(`/admin/students/${previous.id}`)
+      await expect(
+        page.getByText(/Linked to .*student.alpha@example.test/)
+      ).toBeVisible({ timeout: 120_000 })
+      await page.getByLabel("Student account", { exact: true }).selectOption("")
+      await save(
+        page,
+        "Save account link",
+        `students/${previous.id}/account`,
+        "PATCH",
+        200
+      )
+      await page.reload()
+      await expect(
+        page.getByText("No sign-in account is linked.", { exact: true })
+      ).toBeVisible({ timeout: 120_000 })
+    }
     await page.goto("/admin/students")
     await page.getByText("Create academic year", { exact: true }).click()
     await page
@@ -207,11 +241,15 @@ test.describe("live APS to SAMS authorized class context", () => {
     await logout(page)
     await signIn(page, "Student")
     await page.goto("/student/classes")
-    await expect(page.getByText(className, { exact: true })).toBeVisible({
+    await expect(
+      page.getByRole("heading", { name: className, exact: true })
+    ).toBeVisible({
       timeout: 120_000,
     })
     await page.reload()
-    await expect(page.getByText(className, { exact: true })).toBeVisible({
+    await expect(
+      page.getByRole("heading", { name: className, exact: true })
+    ).toBeVisible({
       timeout: 120_000,
     })
     await page.goto(`/student/classes/${schoolClass.id}`)
@@ -250,11 +288,15 @@ test.describe("live APS to SAMS authorized class context", () => {
     await logout(page)
     await signIn(page, "Teacher")
     await page.goto("/teacher/classes")
-    await expect(page.getByText(className, { exact: true })).toBeVisible({
+    await expect(
+      page.getByRole("heading", { name: className, exact: true })
+    ).toBeVisible({
       timeout: 120_000,
     })
     await page.reload()
-    await expect(page.getByText(className, { exact: true })).toBeVisible({
+    await expect(
+      page.getByRole("heading", { name: className, exact: true })
+    ).toBeVisible({
       timeout: 120_000,
     })
     await page.goto(`/teacher/classes/${schoolClass.id}`)
@@ -264,7 +306,7 @@ test.describe("live APS to SAMS authorized class context", () => {
       })
     ).toBeVisible({ timeout: 120_000 })
     await expect(
-      page.getByText("1 actively enrolled students", { exact: true })
+      page.getByText("Active students: 1", { exact: true })
     ).toBeVisible()
     expect(
       (
