@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
+import { toast, Toaster } from "sonner"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,24 +28,18 @@ const settingsSchema = z.object({
   }),
 })
 type Settings = z.infer<typeof settingsSchema>
-async function request(path = "", method = "GET", body?: BodyInit) {
-  const response = await fetch(`/api/school-settings${path}`, {
-    method,
+async function request(body?: FormData) {
+  const response = await fetch(`/api/school-settings${body ? "/save" : ""}`, {
+    method: body ? "POST" : "GET",
     body,
     cache: "no-store",
-    headers:
-      body instanceof FormData
-        ? {}
-        : body
-          ? { "content-type": "application/json" }
-          : {},
   })
   const result = await response.json().catch(() => null)
   if (!response.ok)
     throw new Error(
       typeof result?.error === "string"
         ? result.error
-        : "Settings could not be loaded."
+        : "Settings could not be saved. Reload before retrying."
     )
   return settingsSchema.parse(result)
 }
@@ -52,9 +47,15 @@ export function SchoolSettings() {
   const router = useRouter()
   const [data, setData] = useState<Settings | null>(null)
   const [error, setError] = useState("")
-  const [message, setMessage] = useState("")
   const [busy, setBusy] = useState(false)
+  const [dirty, setDirty] = useState(false)
   const [retry, setRetry] = useState(0)
+  const [file, setFile] = useState<File>()
+  const [fileReset, setFileReset] = useState(0)
+  const [preview, setPreview] = useState<string>()
+  const [logoAction, setLogoAction] = useState<"keep" | "replace" | "remove">(
+    "keep"
+  )
   useEffect(() => {
     let active = true
     request()
@@ -74,105 +75,100 @@ export function SchoolSettings() {
       active = false
     }
   }, [retry])
-  async function save(work: () => Promise<Settings>, success: string) {
+  useEffect(() => {
+    if (!file) {
+      setPreview(undefined)
+      return
+    }
+    const url = URL.createObjectURL(file)
+    setPreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [file])
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!data || busy || !dirty) return
+    const values = new FormData(event.currentTarget)
+    const body = new FormData()
+    body.set("name", String(values.get("name") ?? ""))
+    body.set("displayName", String(values.get("displayName") ?? ""))
+    body.set("schoolVersion", String(data.school.brandingVersion))
+    body.set("profileVersion", String(data.user.profileVersion))
+    body.set("logoAction", logoAction)
+    if (logoAction === "replace" && file) body.set("logo", file)
     setBusy(true)
     setError("")
-    setMessage("")
     try {
-      setData(await work())
-      setMessage(success)
+      setData(await request(body))
+      setFile(undefined)
+      setLogoAction("keep")
+      setDirty(false)
+      setFileReset((v) => v + 1)
+      toast.success("Settings saved")
       router.refresh()
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : "Your change could not be saved."
+        e instanceof Error ? e.message : "Your changes could not be saved."
       )
     } finally {
       setBusy(false)
     }
   }
-  function rename(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const form = new FormData(e.currentTarget)
-    void save(
-      () =>
-        request(
-          "",
-          "PATCH",
-          JSON.stringify({
-            name: form.get("name"),
-            version: data?.school.brandingVersion,
-          })
-        ),
-      "School name saved across your workspace."
-    )
-  }
-  function profile(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const form = new FormData(e.currentTarget)
-    void save(
-      () =>
-        request(
-          "/profile",
-          "PATCH",
-          JSON.stringify({
-            displayName: form.get("displayName"),
-            version: data?.user.profileVersion,
-          })
-        ),
-      "Your display name was saved."
-    )
-  }
-  function logo(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const form = new FormData(e.currentTarget)
-    const file = form.get("logo")
-    if (!(file instanceof File) || !file.size || file.size > 2 * 1024 * 1024) {
-      setError("Choose a PNG, JPEG or WebP logo up to 2 MB.")
-      return
-    }
-    form.set("version", String(data?.school.brandingVersion))
-    void save(
-      () => request("/logo", "POST", form),
-      "School logo saved across your workspace."
-    )
-  }
   return (
     <div className="mx-4 mb-6 space-y-6 lg:mx-6">
+      <Toaster
+        theme="light"
+        position="top-right"
+        richColors
+        toastOptions={{
+          classNames: {
+            success: "!border-emerald-800 !bg-emerald-700 !text-white",
+          },
+        }}
+      />
       {error && (
         <div role="alert" className="rounded-xl border border-destructive p-4">
           {error}{" "}
-          <Button variant="outline" onClick={() => setRetry((v) => v + 1)}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              if (
+                dirty &&
+                !window.confirm(
+                  "Reload settings and discard your unsaved changes?"
+                )
+              )
+                return
+              setData(null)
+              setDirty(false)
+              setFile(undefined)
+              setLogoAction("keep")
+              setRetry((v) => v + 1)
+            }}
+          >
             Reload settings
           </Button>
         </div>
       )}
-      {message && (
-        <p role="status" className="rounded-xl border p-4">
-          {message}
-        </p>
-      )}
       {!data ? (
         !error && <p role="status">Loading school settings…</p>
       ) : (
-        <fieldset
-          disabled={busy}
-          className="space-y-6 border-0 p-0"
-          aria-busy={busy}
+        <form
+          onSubmit={save}
+          onChange={() => setDirty(true)}
+          key={`${data.school.brandingVersion}:${data.user.profileVersion}:${retry}`}
         >
-          <Card>
-            <CardHeader>
-              <CardTitle>Your account</CardTitle>
-              <CardDescription>
-                Update your display name. Your sign-in email and permissions
-                stay managed separately.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form
-                onSubmit={profile}
-                className="grid max-w-xl gap-3"
-                key={`profile-${data.user.profileVersion}`}
-              >
+          <fieldset
+            disabled={busy}
+            aria-busy={busy}
+            className="space-y-6 border-0 p-0"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>Your account</CardTitle>
+                <CardDescription>Update your display name.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid max-w-xl gap-3">
                 <Label htmlFor="admin-display-name">Your display name</Label>
                 <Input
                   id="admin-display-name"
@@ -181,24 +177,16 @@ export function SchoolSettings() {
                   maxLength={100}
                   defaultValue={data.user.displayName}
                 />
-                <Button type="submit">Save my name</Button>
-              </form>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>School identity</CardTitle>
-              <CardDescription>
-                Your saved school name appears throughout the authenticated
-                workspace.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form
-                onSubmit={rename}
-                className="grid max-w-xl gap-3"
-                key={`school-${data.school.brandingVersion}`}
-              >
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>School identity</CardTitle>
+                <CardDescription>
+                  Your saved school name appears throughout your workspace.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid max-w-xl gap-3">
                 <Label htmlFor="school-display-name">School name</Label>
                 <Input
                   id="school-display-name"
@@ -207,77 +195,100 @@ export function SchoolSettings() {
                   maxLength={200}
                   defaultValue={data.school.name}
                 />
-                <Button type="submit">Save school name</Button>
-              </form>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>School branding</CardTitle>
-              <CardDescription>
-                Upload, replace or remove your school logo. PNG, JPEG or WebP;
-                up to 2 MB and 4096 × 4096 pixels. Images are resized and
-                metadata is removed.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <SchoolLogo
-                school={{
-                  id: data.school.id,
-                  name: data.school.name,
-                  logoUrl: data.school.logoPresent
-                    ? `/api/school-logo?v=${data.school.brandingVersion}`
-                    : undefined,
-                }}
-                subtitle="Saved school identity"
-              />
-              <form
-                onSubmit={logo}
-                className="grid max-w-xl gap-3"
-                key={`logo-${data.school.brandingVersion}`}
-              >
-                <Label htmlFor="saved-school-logo">School logo</Label>
-                <Input
-                  id="saved-school-logo"
-                  type="file"
-                  name="logo"
-                  accept="image/png,image/jpeg,image/webp"
-                  required
-                />
-                <Button type="submit">
-                  {data.school.logoPresent
-                    ? "Replace school logo"
-                    : "Save school logo"}
-                </Button>
-              </form>
-              {data.school.logoPresent && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        "Remove the saved logo? Your school name and records will be kept."
-                      )
-                    )
-                      void save(
-                        () =>
-                          request(
-                            "/logo",
-                            "DELETE",
-                            JSON.stringify({
-                              version: data.school.brandingVersion,
-                            })
-                          ),
-                        "School logo removed."
-                      )
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>School branding</CardTitle>
+                <CardDescription>
+                  PNG, JPEG or WebP; up to 2 MB and 4096 × 4096 pixels.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <SchoolLogo
+                  school={{
+                    id: data.school.id,
+                    name: data.school.name,
+                    logoUrl:
+                      logoAction === "remove"
+                        ? undefined
+                        : (preview ??
+                          (data.school.logoPresent
+                            ? `/api/school-logo?v=${data.school.brandingVersion}`
+                            : undefined)),
                   }}
-                >
-                  Remove school logo
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        </fieldset>
+                  subtitle={
+                    logoAction === "remove"
+                      ? "Logo will be removed when you save"
+                      : file
+                        ? "New logo preview"
+                        : "School identity"
+                  }
+                />
+                <div className="grid max-w-xl gap-3">
+                  <Label htmlFor="saved-school-logo">School logo</Label>
+                  <Input
+                    key={fileReset}
+                    id="saved-school-logo"
+                    type="file"
+                    name="logo"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={(e) => {
+                      const selected = e.currentTarget.files?.[0]
+                      const invalid =
+                        selected &&
+                        (selected.size > 2 * 1024 * 1024 ||
+                          !["image/png", "image/jpeg", "image/webp"].includes(
+                            selected.type
+                          ))
+                      e.currentTarget.setCustomValidity(
+                        invalid
+                          ? "Choose a PNG, JPEG or WebP logo up to 2 MB."
+                          : ""
+                      )
+                      if (invalid) {
+                        e.currentTarget.reportValidity()
+                        return
+                      }
+                      setFile(selected)
+                      setLogoAction(selected ? "replace" : "keep")
+                    }}
+                  />
+                </div>
+                {(data.school.logoPresent ||
+                  file ||
+                  logoAction === "remove") && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setLogoAction(logoAction === "remove" ? "keep" : "remove")
+                      setFile(undefined)
+                      setFileReset((v) => v + 1)
+                      setDirty(true)
+                    }}
+                  >
+                    {logoAction === "remove"
+                      ? "Undo logo removal"
+                      : "Remove school logo"}
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+            <div className="sticky bottom-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-background p-4 shadow-lg">
+              <p className="text-sm text-muted-foreground" role="status">
+                {busy
+                  ? "Saving your changes…"
+                  : dirty
+                    ? "Unsaved changes"
+                    : "All changes saved"}
+              </p>
+              <Button type="submit" disabled={!dirty}>
+                {busy ? "Saving…" : "Save changes"}
+              </Button>
+            </div>
+          </fieldset>
+        </form>
       )}
     </div>
   )

@@ -42,6 +42,65 @@ function setup() {
   };
 }
 describe('current-school settings invariants', () => {
+  const combined = {
+    name: 'New school',
+    displayName: 'New admin',
+    schoolVersion: 1,
+    profileVersion: 1,
+    logoAction: 'keep' as const
+  };
+  it('saves school and own profile in one transaction and audits both entities', async () => {
+    const { service, repo, tx, audit } = setup();
+    await service.saveAll(p, 'request', combined);
+    expect(repo.run).toHaveBeenCalledTimes(1);
+    expect(tx.school.updateMany).toHaveBeenCalledWith({
+      where: { id: p.schoolId, brandingVersion: 1 },
+      data: { name: 'New school', brandingVersion: { increment: 1 } }
+    });
+    expect(tx.user.updateMany).toHaveBeenCalledWith({
+      where: { id: p.userId, profileVersion: 1 },
+      data: { displayName: 'New admin', profileVersion: { increment: 1 } }
+    });
+    expect(audit.record).toHaveBeenCalledTimes(2);
+  });
+  it('rejects a stale profile before changing school data', async () => {
+    const { service, tx, audit } = setup();
+    await expect(
+      service.saveAll(p, 'r', { ...combined, profileVersion: 2 })
+    ).rejects.toThrow('Reload');
+    expect(tx.school.updateMany).not.toHaveBeenCalled();
+    expect(audit.record).not.toHaveBeenCalled();
+  });
+  it('rejects the entire transaction if the profile conflicts after the school update', async () => {
+    const { service, tx, audit } = setup();
+    tx.user.updateMany.mockResolvedValue({ count: 0 });
+    await expect(service.saveAll(p, 'r', combined)).rejects.toThrow('Reload');
+    expect(audit.record).not.toHaveBeenCalled();
+  });
+  it('does not write or audit when nothing changed', async () => {
+    const { service, tx, audit } = setup();
+    await service.saveAll(p, 'r', {
+      ...combined,
+      name: 'School',
+      displayName: 'Admin'
+    });
+    expect(tx.school.updateMany).not.toHaveBeenCalled();
+    expect(tx.user.updateMany).not.toHaveBeenCalled();
+    expect(audit.record).not.toHaveBeenCalled();
+  });
+  it('denies combined writes and invalid logo intent before starting a transaction', async () => {
+    const { service, repo } = setup();
+    await expect(
+      service.saveAll({ ...p, roles: ['teacher'] }, 'r', combined)
+    ).rejects.toThrow('Admin');
+    await expect(
+      service.saveAll(p, 'r', { ...combined, logoAction: 'replace' })
+    ).rejects.toThrow('logo');
+    await expect(
+      service.saveAll(p, 'r', combined, Buffer.from('bad'))
+    ).rejects.toThrow('logo');
+    expect(repo.run).not.toHaveBeenCalled();
+  });
   it('denies non-Admin and wrong-scope writes before transaction or image decoding', async () => {
     const { service, repo } = setup();
     for (const roles of [['teacher'], ['student'], ['registrar']])

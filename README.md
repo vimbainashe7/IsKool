@@ -136,7 +136,7 @@ Teacher/account administration, teaching assignments, academic work, timetable, 
 
 ### School identity and white-label settings
 
-Admin → Settings → Account provides **Save my name**, **Save school name**, and **Save/Replace/Remove school logo**. These persist through SAMS/PostgreSQL and feed the authenticated sidebar, header, footer, profile name and browser title/favicon across roles after navigation/reload. Other schools keep their own identity. Teacher/Student sessions display branding without Admin mutation rights.
+Admin → Settings → Account lets you edit your display name, school name and logo together. Click **Save changes** once; a green **Settings saved** toast confirms the whole update persisted. Logo selection/removal is a preview until you save. All changes commit together through SAMS/PostgreSQL; validation or stale-version errors preserve the form for correction without a partial update. Saved identity feeds the authenticated sidebar, header, footer, profile name and browser title/favicon across roles after navigation/reload. Other schools keep their own identity. Teacher/Student sessions display branding without Admin mutation rights.
 
 Logos must be PNG/JPEG/WebP, at most 2 MB and 4096×4096 pixels. The server validates/decodes, resizes and re-encodes a small WebP, removes metadata and serves it only to authenticated school members. Removing a logo retains school/account records. Email, credentials, roles, school creation/deletion and tenant-domain routing are separate workflows.
 

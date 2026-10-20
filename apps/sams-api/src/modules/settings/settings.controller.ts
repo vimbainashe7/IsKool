@@ -19,12 +19,27 @@ import { SettingsService } from './settings.service';
 import {
   OwnProfileDto,
   SchoolNameDto,
-  SettingsVersionDto
+  SettingsVersionDto,
+  SaveSettingsDto
 } from './settings.dto';
 @Controller('school-settings')
 @UseGuards(ServiceAuthGuard)
 export class SettingsController {
   constructor(private readonly settings: SettingsService) {}
+  @Post('save')
+  @UseInterceptors(
+    FileInterceptor('logo', {
+      limits: { fileSize: 2 * 1024 * 1024, files: 1, fields: 5, parts: 6 }
+    })
+  )
+  saveAll(
+    @CurrentPrincipal() p: AuthPrincipal,
+    @RequestId() r: string,
+    @Body() dto: SaveSettingsDto,
+    @UploadedFile() file?: { buffer: Buffer }
+  ) {
+    return this.settings.saveAll(p, r, dto, file?.buffer);
+  }
   @Get() read(@CurrentPrincipal() p: AuthPrincipal, @RequestId() r: string) {
     return this.settings.read(p, r);
   }

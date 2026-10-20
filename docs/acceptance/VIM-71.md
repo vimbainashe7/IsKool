@@ -8,10 +8,10 @@ npm run dev:iskool
 
 Wait for `PASS LIVE IsKool ready`, then open `http://127.0.0.1:3000/sign-in` with the existing Admin development account/password. Startup never migrates, seeds or resets records.
 
-1. Settings → Account: edit **Your display name**, **Save my name**. Confirm sidebar/profile menu and dashboard welcome after navigation/reload.
-2. Edit **School name**, **Save school name**. Confirm header, sidebar, footer and browser title update.
-3. Upload PNG/JPEG/WebP up to 2 MB and 4096×4096 pixels, **Save school logo**. Confirm header/sidebar and reload persistence.
-4. Upload a different image, **Replace school logo**, then **Remove school logo** and confirm. Reload: school name/records remain with the initials fallback.
+1. Settings / Account: edit **Your display name**, **School name** and select a PNG/JPEG/WebP logo up to 2 MB and 4096 pixels per dimension. These remain drafts until saved.
+2. Click the single **Save changes** button. Confirm one green **Settings saved** toast, then navigate/reload. Check your name in the sidebar/profile menu and school identity in the header/sidebar/footer/browser title.
+3. Select a different image and **Save changes** once. Confirm replacement after reload.
+4. Click **Remove school logo** (preview only; **Undo logo removal** cancels), then **Save changes**. Reload: school name/records remain with the initials fallback.
 5. Teacher and Student in that school see its saved identity without branding edit controls. Their own names must not change when the Admin edits their own profile.
 6. Invalid images, stale edits and unauthorized writes show useful errors. Another school's identity remains isolated.
 

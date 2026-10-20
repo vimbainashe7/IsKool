@@ -53,25 +53,27 @@ async function logout(page: Page) {
   await page.getByRole("button", { name: "Sign out", exact: true }).click()
   await expect(page).toHaveURL(/\/sign-in$/)
 }
-async function save(
-  page: Page,
-  button: string,
-  path: string,
-  method = "PATCH",
-  status = 200
-) {
+async function save(page: Page) {
   const [response] = await Promise.all([
     page.waitForResponse(
       (r) =>
-        new URL(r.url()).pathname === `/api/school-settings${path}` &&
-        r.request().method() === method,
+        new URL(r.url()).pathname === "/api/school-settings/save" &&
+        r.request().method() === "POST",
       { timeout: 90_000 }
     ),
-    page.getByRole("button", { name: button, exact: true }).click(),
+    page.getByRole("button", { name: "Save changes", exact: true }).click(),
   ])
-  expect(response.status()).toBe(status)
+  expect(response.status()).toBe(201)
+  await expect(page.getByText("Settings saved", { exact: true })).toBeVisible()
+  await expect(
+    page.getByText("All changes saved", { exact: true })
+  ).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Save changes", exact: true })
+  ).toBeDisabled()
   return response.json()
 }
+
 test.describe("live white-label settings", () => {
   test.skip(
     !live,
@@ -93,35 +95,67 @@ test.describe("live white-label settings", () => {
     // Beta, the owner's Admin, or an arbitrary school from a request parameter.
     expect(initial.school.id).toBe("b1000000-0000-4000-8000-000000000001")
     const name = `Branding Academy ${Date.now()}`
-    const displayName = "Branding Owner"
+    const displayName = `Branding Owner ${Date.now()}`
     await page
       .getByLabel("Your display name", { exact: true })
       .fill(displayName)
-    await save(page, "Save my name", "/profile")
     await page.getByLabel("School name", { exact: true }).fill(name)
-    const renamed = await save(page, "Save school name", "")
+    await page.getByLabel("School logo", { exact: true }).setInputFiles({
+      name: "acceptance.png",
+      mimeType: "image/png",
+      buffer: png,
+    })
+    // Drafts do not write until the single Save is clicked.
+    expect(
+      await (await page.request.get("/api/school-settings")).json()
+    ).toEqual(initial)
     await expect(
-      page.locator("header").getByText(name, { exact: true })
-    ).toBeVisible({ timeout: 120_000 })
-    const stale = await page.request.patch("/api/school-settings", {
-      headers: { origin: new URL(page.url()).origin },
-      data: { name: "Stale name", version: initial.school.brandingVersion },
+      page.getByRole("button", { name: "Save changes", exact: true })
+    ).toHaveCount(1)
+    let saveRequests = 0
+    page.on("request", (request) => {
+      if (
+        new URL(request.url()).pathname === "/api/school-settings/save" &&
+        request.method() === "POST"
+      )
+        saveRequests++
     })
-    expect(stale.status()).toBe(409)
-    const elevated = await page.request.patch("/api/school-settings/profile", {
-      headers: { origin: new URL(page.url()).origin },
-      data: {
-        displayName: "Wrong user",
-        version: 1,
-        userId: "foreign",
-        roles: ["admin"],
-      },
+    const saved = await save(page)
+    expect(saveRequests).toBe(1)
+    await expect(
+      page.locator('[data-sonner-toast][data-type="success"]')
+    ).toHaveClass(/bg-emerald-700/)
+    await page.screenshot({
+      path: info.outputPath("single-save-success.png"),
+      fullPage: true,
     })
-    expect(elevated.status()).toBe(400)
-    const badLogo = await page.request.post("/api/school-settings/logo", {
+    expect(saved.school.name).toBe(name)
+    expect(saved.user.displayName).toBe(displayName)
+    expect(saved.school.brandingVersion).toBe(
+      initial.school.brandingVersion + 1
+    )
+    // One batch must not partially rename the school on a stale profile.
+    const fields = {
+      name: "Must not persist",
+      displayName: "Must not persist",
+      schoolVersion: String(saved.school.brandingVersion),
+      profileVersion: String(saved.user.profileVersion + 1),
+      logoAction: "keep",
+    }
+    const stale = await page.request.post("/api/school-settings/save", {
       headers: { origin: new URL(page.url()).origin },
       multipart: {
-        version: String(renamed.school.brandingVersion),
+        ...fields,
+        schoolVersion: String(saved.school.brandingVersion),
+      },
+    })
+    expect(stale.status()).toBe(409)
+    const badLogo = await page.request.post("/api/school-settings/save", {
+      headers: { origin: new URL(page.url()).origin },
+      multipart: {
+        ...fields,
+        profileVersion: String(saved.user.profileVersion),
+        logoAction: "replace",
         logo: {
           name: "hidden.png",
           mimeType: "image/png",
@@ -130,17 +164,9 @@ test.describe("live white-label settings", () => {
       },
     })
     expect(badLogo.status()).toBe(422)
-    await page.getByLabel("School logo", { exact: true }).setInputFiles({
-      name: "acceptance.png",
-      mimeType: "image/png",
-      buffer: png,
-    })
-    const logoButton = (await page
-      .getByRole("button", { name: "Save school logo", exact: true })
-      .count())
-      ? "Save school logo"
-      : "Replace school logo"
-    const saved = await save(page, logoButton, "/logo", "POST", 201)
+    expect(
+      await (await page.request.get("/api/school-settings")).json()
+    ).toEqual(saved)
     expect(saved.school.logoPresent).toBe(true)
     const firstLogo = await page.request.get("/api/school-logo")
     expect(firstLogo.status()).toBe(200)
@@ -152,13 +178,7 @@ test.describe("live white-label settings", () => {
       mimeType: "image/png",
       buffer: replacementPng,
     })
-    const replacement = await save(
-      page,
-      "Replace school logo",
-      "/logo",
-      "POST",
-      201
-    )
+    const replacement = await save(page)
     expect(replacement.school.brandingVersion).toBe(
       saved.school.brandingVersion + 1
     )
@@ -194,9 +214,15 @@ test.describe("live white-label settings", () => {
       const image = await page.request.get("/api/school-logo")
       expect(image.status()).toBe(200)
       expect(await image.body()).toEqual(canonical)
-      const denied = await page.request.patch("/api/school-settings", {
+      const denied = await page.request.post("/api/school-settings/save", {
         headers: { origin: new URL(page.url()).origin },
-        data: { name: "Denied", version: replacement.school.brandingVersion },
+        multipart: {
+          name: "Denied",
+          displayName: "Denied",
+          schoolVersion: String(replacement.school.brandingVersion),
+          profileVersion: "1",
+          logoAction: "keep",
+        },
       })
       expect([401, 403]).toContain(denied.status())
       await page.goto("/settings/account")
@@ -217,12 +243,21 @@ test.describe("live white-label settings", () => {
     await expect(
       page.getByRole("button", { name: "Remove school logo", exact: true })
     ).toBeVisible({ timeout: 120_000 })
-    page.once("dialog", (dialog) => void dialog.accept())
-    await save(page, "Remove school logo", "/logo", "DELETE", 200)
+    await page
+      .getByRole("button", { name: "Remove school logo", exact: true })
+      .click()
+    expect((await page.request.get("/api/school-logo")).status()).toBe(200)
+    await page
+      .getByRole("button", { name: "Undo logo removal", exact: true })
+      .click()
+    await page
+      .getByRole("button", { name: "Remove school logo", exact: true })
+      .click()
+    await save(page)
     await page.reload()
     await expect(
-      page.getByRole("button", { name: "Save school logo", exact: true })
-    ).toBeVisible({ timeout: 120_000 })
+      page.getByRole("button", { name: "Save changes", exact: true })
+    ).toBeDisabled({ timeout: 120_000 })
     expect((await page.request.get("/api/school-logo")).status()).toBe(404)
     await page.setViewportSize({ width: 390, height: 844 })
     expect(

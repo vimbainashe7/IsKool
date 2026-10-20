@@ -80,13 +80,11 @@ it("reads the logo using APS credentials for academic-only users and keeps it pr
   mocks.cookie.mockImplementation((name: string) =>
     name === "aps" ? { value: "academic-unit-token" } : undefined
   )
-  const fetcher = vi
-    .fn()
-    .mockResolvedValue(
-      new Response(new Uint8Array([82, 73, 70, 70]), {
-        headers: { "content-type": "image/webp" },
-      })
-    )
+  const fetcher = vi.fn().mockResolvedValue(
+    new Response(new Uint8Array([82, 73, 70, 70]), {
+      headers: { "content-type": "image/webp" },
+    })
+  )
   vi.stubGlobal("fetch", fetcher)
   const response = await logo()
   expect(response.status).toBe(200)
@@ -113,4 +111,36 @@ it("does not return unknown binary types or unauthenticated logos", async () => 
       )
   )
   expect((await logo()).status).toBe(502)
+})
+
+it("forwards the single multipart save with the server SAMS credential", async () => {
+  const fetcher = vi
+    .fn()
+    .mockResolvedValue(
+      Response.json({ school: { name: "School" } }, { status: 201 })
+    )
+  vi.stubGlobal("fetch", fetcher)
+  const body = new FormData()
+  body.set("name", "School")
+  body.set("displayName", "Owner")
+  body.set("schoolVersion", "1")
+  body.set("profileVersion", "1")
+  body.set("logoAction", "keep")
+  const response = await POST(
+    new Request("http://localhost/api/school-settings/save", {
+      method: "POST",
+      headers: { origin: "http://localhost" },
+      body,
+    }),
+    params(["save"])
+  )
+  expect(response.status).toBe(201)
+  expect(fetcher).toHaveBeenCalledOnce()
+  expect(fetcher).toHaveBeenCalledWith(
+    "http://127.0.0.1:3002/api/v1/school-settings/save",
+    expect.objectContaining({
+      method: "POST",
+      headers: expect.objectContaining({ authorization: "Bearer unit-token" }),
+    })
+  )
 })

@@ -18,7 +18,7 @@ async function handle(
       {
         GET: [""],
         PATCH: ["", "profile"],
-        POST: ["logo"],
+        POST: ["logo", "save"],
         DELETE: ["logo"],
       } as Record<string, string[]>
     )[request.method]?.includes(path)
