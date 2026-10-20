@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readLocalEnv } from './helpers/local-env.mjs';
+import { readLocalEnv, updateLocalEnv } from './helpers/local-env.mjs';
 
 // Explicit local configuration only. Never rotates user passwords, JWT keys,
 // changes database records or runs automatically during application startup.
@@ -24,10 +24,7 @@ try {
     const values = { SAMS_INTERNAL_ENABLED: 'true', SAMS_INTERNAL_SERVICE_KEY: key, ...(index === 0
       ? { SAMS_INTERNAL_HOST: '127.0.0.1', SAMS_INTERNAL_PORT: '3003', SAMS_INTERNAL_ALLOW_NETWORK: 'false' }
       : { SAMS_INTERNAL_BASE_URL: 'http://127.0.0.1:3003/internal/v1', SAMS_INTERNAL_TIMEOUT_MS: '8000' }) };
-    for (const [name, value] of Object.entries(values)) {
-      const pattern = new RegExp(`^\\s*(?:export\\s+)?${name}=.*$`, 'm');
-      source = pattern.test(source) ? source.replace(pattern, `${name}=${value}`) : `${source.trimEnd()}\n${name}=${value}\n`;
-    }
+    source = updateLocalEnv(source, values);
     writeFileSync(path, source, { mode: 0o600 });
   }
   console.log('PASS configured matching internal-read credentials in ignored local API env files. Previous files backed up under ignored tmp/local-dev.');
