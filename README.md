@@ -32,6 +32,7 @@ $npm22 = Join-Path $env:NVM_HOME 'v22.20.0/node_modules/npm/bin/npm-cli.js'
 $env:Path = "$(Split-Path $node22);$env:Path"
 & $node22 $npm22 ci
 & $node22 $npm22 run prisma:generate
+& $node22 $npm22 run prisma:client:check
 & $node22 $npm22 run prisma:validate
 
 cd frontend_base

@@ -1,6 +1,6 @@
 # VIM-52 — authorized class context
 
-Depends on merged VIM-51 student/enrollment records and VIM-38 internal read boundary. Status: implementation and local verification in progress; not human accepted, merged or released.
+Depends on merged VIM-51 student/enrollment records and VIM-38 internal read boundary. Implementation is in [PR #8](https://github.com/vimbainashe7/IsKool/pull/8); human acceptance, merge and release remain pending. Current exact-head CI and live browser evidence are recorded on that PR.
 
 ## Owner walkthrough
 
@@ -32,6 +32,8 @@ Each mutation has validation, understandable feedback and a transaction-bound au
 - Disposable PostgreSQL: replay every canonical migration; set `MASTER_DATA_TEST_URL` to that disposable database and run `npm run db:master-data:test`; set `DATABASE_URL` to the same disposable database and run `npm run db:drift:check`.
 - `npm run smoke:vim-52` — one Playwright worker, real browser/API/approved development database; traces off, redacted reporter. Creates synthetic editable records and retains them for review. Do not use production credentials.
 
-Fresh replay and restricted-role checks passed locally through `20261020090000_authorized_class_context.sql`; Prisma reports no drift. Exact final-head unit/browser/CI evidence and hosted application status will be recorded after verification. Do not infer a passed live workflow from this document's existence.
+Fresh replay and restricted-role checks passed locally and in CI through `20261020090000_authorized_class_context.sql`; Prisma reports no drift. The additive migration was applied atomically only to approved hosted development after eight checks passed at `5bd4812`, with migration history and maintenance audit recorded. CI verified 21 auth, 3 shared-contract, 29 APS, 103 SAMS, 143 frontend unit and 52 existing browser tests; live tests require the real development environment and are separate from those 52. See PR #8 for the latest live result and current exact-head checks. Do not infer human acceptance or production release from an automated pass.
+
+The Windows launcher now also checks its generated Prisma schema in CI (`npm run prisma:client:check`). Local service-key setup normalizes Windows/Unix line endings and verifies that unmanaged environment values remain unchanged; regression coverage includes adjacent database URLs and passwords. Existing passwords/signing keys remain intact.
 
 Contract and security details: [Internal SAMS API](../contracts/INTERNAL_SAMS_API.md). PR and delivery state: [Product delivery](../progress/PRODUCT_DELIVERY.md).

@@ -33,6 +33,9 @@ jobs:
       - name: Generate Prisma client
         run: npm run prisma:generate
 
+      - name: Verify generated schema is compatible with the development launcher
+        run: npm run prisma:client:check
+
       - name: Validate Prisma mapping
         run: npm run prisma:validate
 
