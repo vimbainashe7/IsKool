@@ -42,14 +42,22 @@ describe('private internal HTTP contract', () => {
   });
   const auth = { validatePrincipal: jest.fn(async (p) => p) };
   const guard = new InternalReadGuard(config, auth as never);
-  const contexts = jest.fn(
-    async (_tx: unknown, _p: unknown, _q: { limit: number }) => ({
+  const contexts = jest
+    .fn<
+      Promise<{
+        authorized: boolean;
+        asOf: Date;
+        classes: never[];
+        totalClasses: number;
+      }>,
+      [unknown, unknown, { limit: number }]
+    >()
+    .mockResolvedValue({
       authorized: true,
       asOf: new Date(),
       classes: [],
       totalClasses: 0
-    })
-  );
+    });
   const reads = new InternalReadService({
     run: async (_p: unknown, _r: unknown, work: (tx: unknown) => unknown) =>
       work({}),

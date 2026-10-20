@@ -284,7 +284,7 @@ test.describe("live APS to SAMS authorized class context", () => {
           }
         )
       ).status()
-    ).toBe(403)
+    ).toBe(401)
     await logout(page)
     await signIn(page, "Teacher")
     await page.goto("/teacher/classes")
