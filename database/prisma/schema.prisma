@@ -206,9 +206,9 @@ model Student {
   school School @relation(fields:[schoolId], references:[id], onDelete:Restrict, onUpdate:NoAction)
   guardians StudentGuardian[]
   enrollments Enrollment[]
-  @@unique([id,schoolId])
   membershipId String? @map("membership_id") @db.Uuid
   account Membership? @relation("StudentAccount",fields:[membershipId,schoolId],references:[id,schoolId],onDelete:Restrict,onUpdate:NoAction,map:"students_membership_school_fkey")
+  @@unique([id,schoolId])
   @@unique([membershipId,schoolId],map:"students_membership_school_unique")
   @@unique([schoolId,admissionNumber])
   @@index([schoolId,id], map:"students_school_id_idx")
