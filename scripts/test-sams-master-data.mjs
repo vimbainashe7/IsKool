@@ -27,6 +27,15 @@ const checks = sql(readFileSync('scripts/sql/sams-master-data-rls.sql', 'utf8'),
 console.log(checks.split(/\r?\n/).filter(line => line.includes('PASS ')).join('\n').trim());
 const settings = sql(readFileSync('scripts/sql/school-settings-rls.sql', 'utf8'), 'iskool_master_data_test');
 console.log((settings.stdout + settings.stderr).split(/\r?\n/).filter(line=>line.includes('PASS ')).join('\n').trim());
+console.log(sql(readFileSync('scripts/sql/class-context-rls.sql', 'utf8'), 'iskool_master_data_test').stdout.split(/\r?\n/).filter(line=>line.includes('PASS ')).join('\n').trim());
+sql("UPDATE public.memberships SET status='inactive' WHERE id='a3000000-0000-4000-8000-000000000003';");
+sql(`BEGIN; SELECT set_config('iskool.user_id','a2000000-0000-4000-8000-000000000003',true),set_config('iskool.membership_id','a3000000-0000-4000-8000-000000000003',true),set_config('iskool.school_id','a1000000-0000-4000-8000-000000000001',true); DO $$ BEGIN IF EXISTS(SELECT 1 FROM public.students) OR EXISTS(SELECT 1 FROM public.classes) OR EXISTS(SELECT 1 FROM public.enrollments) OR EXISTS(SELECT 1 FROM public.class_teachers) THEN RAISE EXCEPTION 'Disabled assigned teacher retains access'; END IF; END; $$; ROLLBACK;`, 'iskool_master_data_test');
+sql("UPDATE public.memberships SET status='active' WHERE id='a3000000-0000-4000-8000-000000000003';");
+console.log('PASS disabled assigned teacher denied by restricted runtime RLS');
+sql("UPDATE public.memberships SET status='inactive' WHERE id='a3000000-0000-4000-8000-000000000004';");
+sql(`BEGIN; SELECT set_config('iskool.user_id','a2000000-0000-4000-8000-000000000004',true),set_config('iskool.membership_id','a3000000-0000-4000-8000-000000000004',true),set_config('iskool.school_id','a1000000-0000-4000-8000-000000000001',true); DO $$ BEGIN IF EXISTS(SELECT 1 FROM public.students) OR EXISTS(SELECT 1 FROM public.classes) OR EXISTS(SELECT 1 FROM public.enrollments) OR iskool.principal_can_access_school('a1000000-0000-4000-8000-000000000001') THEN RAISE EXCEPTION 'Disabled linked student retains access'; END IF; END; $$; ROLLBACK;`, 'iskool_master_data_test');
+sql("UPDATE public.memberships SET status='active' WHERE id='a3000000-0000-4000-8000-000000000004';");
+console.log('PASS disabled linked student denied by restricted runtime RLS');
 sql("UPDATE public.memberships SET status='inactive' WHERE id='a3000000-0000-4000-8000-000000000002';");
 sql(`BEGIN; SELECT set_config('iskool.user_id','a2000000-0000-4000-8000-000000000002',true),set_config('iskool.membership_id','a3000000-0000-4000-8000-000000000002',true),set_config('iskool.school_id','a1000000-0000-4000-8000-000000000001',true); DO $$ BEGIN IF EXISTS(SELECT 1 FROM public.students) OR iskool.can_manage_student_records('a1000000-0000-4000-8000-000000000001') THEN RAISE EXCEPTION 'Disabled membership still has access'; END IF; END; $$; ROLLBACK;`, 'iskool_master_data_test');
 console.log('PASS disabled membership denied through restricted runtime connection');
@@ -41,6 +50,9 @@ console.log('PASS APS current-membership role lookup and missing-principal role 
 const aps = sql('SELECT id FROM public.students;', 'iskool_master_aps_test', true);
 if (aps.status === 0 || !aps.stderr.includes('permission denied')) throw new Error('APS must not have direct master-data access');
 console.log('PASS APS direct student-table access denied');
+const apsTeaching = sql('SELECT class_id FROM public.class_teachers;', 'iskool_master_aps_test', true);
+if (apsTeaching.status === 0 || !apsTeaching.stderr.includes('permission denied')) throw new Error('APS must not have direct teacher assignment access');
+console.log('PASS APS direct teacher assignment access denied');
 const apsBranding=sql('UPDATE public.schools SET name=\'Denied\',branding_version=branding_version+1;', 'iskool_master_aps_test', true);
 if (apsBranding.status===0 || !apsBranding.stderr.includes('permission denied')) throw new Error('APS must not mutate school branding');
 console.log('PASS APS school branding writes denied');

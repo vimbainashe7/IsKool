@@ -59,8 +59,12 @@ model Membership {
   authSessions    AuthSession[]
   auditEvents     AuditEvent[]
 
+  studentAccount Student? @relation("StudentAccount")
+  teachingAssignments ClassTeacher[]
+  @@unique([id,schoolId], map:"memberships_id_school_unique")
   @@unique([userId, schoolId], map: "memberships_user_school_unique")
   @@index([userId], map: "memberships_user_id_idx")
+  @@index([schoolId,status,id],map:"memberships_school_status_idx")
   @@index([schoolId], map: "memberships_school_id_idx")
   @@index([userId, schoolId], map: "memberships_user_school_idx")
   @@map("memberships")
@@ -203,6 +207,9 @@ model Student {
   guardians StudentGuardian[]
   enrollments Enrollment[]
   @@unique([id,schoolId])
+  membershipId String? @map("membership_id") @db.Uuid
+  account Membership? @relation("StudentAccount",fields:[membershipId,schoolId],references:[id,schoolId],onDelete:Restrict,onUpdate:NoAction,map:"students_membership_school_fkey")
+  @@unique([membershipId,schoolId],map:"students_membership_school_unique")
   @@unique([schoolId,admissionNumber])
   @@index([schoolId,id], map:"students_school_id_idx")
   @@index([schoolId,familyName,givenName,id], map:"students_school_name_idx")
@@ -274,6 +281,8 @@ model SchoolClass {
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   year AcademicYear @relation(fields:[academicYearId,schoolId], references:[id,schoolId], onDelete:Restrict, onUpdate:NoAction)
   enrollments Enrollment[]
+  teachers ClassTeacher[]
+  @@index([schoolId,id],map:"classes_school_id_idx")
   @@unique([id,schoolId,academicYearId])
   @@unique([schoolId,academicYearId,name])
   @@map("classes")
@@ -297,4 +306,20 @@ model Enrollment {
   @@index([schoolId,studentId,enrolledAt(sort:Desc),id],map:"enrollments_student_history_idx")
   @@index([schoolId,classId,academicTermId,status],map:"enrollments_class_status_idx")
   @@map("enrollments")
+}
+
+model ClassTeacher {
+  classId String @map("class_id") @db.Uuid
+  membershipId String @map("membership_id") @db.Uuid
+  schoolId String @map("school_id") @db.Uuid
+  academicYearId String @map("academic_year_id") @db.Uuid
+  status String @default("active")
+  version Int @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  schoolClass SchoolClass @relation(fields:[classId,schoolId,academicYearId],references:[id,schoolId,academicYearId],onDelete:Restrict,onUpdate:NoAction)
+  membership Membership @relation(fields:[membershipId,schoolId],references:[id,schoolId],onDelete:Restrict,onUpdate:NoAction)
+  @@id([classId,membershipId])
+  @@index([schoolId,membershipId,status,classId],map:"class_teachers_membership_idx")
+  @@map("class_teachers")
 }

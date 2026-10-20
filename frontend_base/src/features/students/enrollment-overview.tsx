@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
+import { TeachingAssignments } from "@/features/classes/teaching-assignments"
 import { AdminSectionCard } from "@/features/admin-workspace/admin-components"
 import {
   studentRequest,
@@ -177,12 +178,14 @@ export function SchoolClassOverview() {
           </>
         )}
         <p>
-          Teacher assignments and academic class work are not available yet.
+          Choose Teaching assignments below to manage class access. Academic
+          work is not available yet.
         </p>
         <Link href="/admin/students" className="underline">
           Manage student enrollment
         </Link>
       </AdminSectionCard>
+      <TeachingAssignments />
       <AcademicSetup onSaved={() => setRetry((v) => v + 1)} />
     </>
   )

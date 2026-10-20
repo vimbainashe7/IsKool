@@ -13,6 +13,8 @@ import { RedisModule } from './infrastructure/redis/redis.module';
 import { StorageModule } from './infrastructure/storage/storage.module';
 import { TelemetryModule } from './infrastructure/telemetry/telemetry.module';
 import { StudentModule } from './modules/students/student.module';
+import { ClassAccessModule } from './modules/class-access/class-access.module';
+import { InternalReadModule } from './modules/internal-read/internal-read.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuditModule } from './modules/audit/audit.module';
@@ -40,6 +42,8 @@ const redisEnabled = process.env.REDIS_ENABLED !== 'false';
     AuthModule,
     AuditModule,
     StudentModule,
+    ClassAccessModule,
+    InternalReadModule,
     SettingsModule,
     HealthModule,
     FoundationModule

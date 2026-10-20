@@ -7,6 +7,7 @@ import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { RequestContextInterceptor } from './common/interceptors/request-context.interceptor';
 import { JsonLogger } from './common/logging/logger.service';
+import { startInternalReads } from './modules/internal-read/internal-read.server';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -42,8 +43,12 @@ async function bootstrap(): Promise<void> {
   SwaggerModule.setup('api/v1/docs', app, document);
 
   const port = config.getOrThrow<number>('app.port');
+  await startInternalReads(app);
   await app.listen(port);
-  logger.log(`Service started on port ${port} with prefix /api/v1`, 'bootstrap');
+  logger.log(
+    `Service started on port ${port} with prefix /api/v1`,
+    'bootstrap'
+  );
 }
 
 void bootstrap();

@@ -26,6 +26,7 @@ import {
   type References,
 } from "./contracts"
 import { AcademicSetup } from "./academic-setup"
+import { StudentAccountLink } from "@/features/classes/student-account-link"
 
 export function StudentAdministration({ studentId }: { studentId?: string }) {
   const router = useRouter()
@@ -219,6 +220,11 @@ export function StudentAdministration({ studentId }: { studentId?: string }) {
         Back to student records
       </Link>
       {feedback}
+      <StudentAccountLink
+        key={`${student.id}:${student.version}`}
+        studentId={student.id}
+        onSaved={refreshStudent}
+      />
       <AdminSectionCard
         title={`${student.givenName} ${student.familyName}`}
         description={`${student.admissionNumber} | ${student.status}`}

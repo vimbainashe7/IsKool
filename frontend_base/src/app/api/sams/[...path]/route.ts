@@ -9,13 +9,13 @@ const uuid =
   "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
 const routes: Record<string, RegExp> = {
   GET: new RegExp(
-    `^(students(?:/${uuid})?|guardians|student-administration/(?:context|summary|enrollments))$`
+    `^(students(?:/${uuid}(?:/account)?)?|guardians|student-administration/(?:context|summary|enrollments|accounts|classes(?:/${uuid}/teachers)?))$`
   ),
   POST: new RegExp(
-    `^(students(?:/${uuid}/(?:guardians|enrollments))?|guardians|student-administration/(?:academic-years|academic-terms|classes))$`
+    `^(students(?:/${uuid}/(?:guardians|enrollments))?|guardians|student-administration/(?:academic-years|academic-terms|classes(?:/${uuid}/teachers)?))$`
   ),
   PATCH: new RegExp(
-    `^(students/${uuid}|student-administration/enrollments/${uuid})$`
+    `^(students/${uuid}(?:/account)?|student-administration/(?:enrollments/${uuid}|classes/${uuid}/teachers/${uuid}))$`
   ),
 }
 function error(message: string, status: number) {
@@ -33,7 +33,14 @@ async function handle(
     return error("This request could not be verified.", 403)
   if (
     [...url.searchParams.keys()].some(
-      (key) => !["cursor", "limit"].includes(key)
+      (key) =>
+        !(
+          path === "student-administration/accounts"
+            ? ["cursor", "limit", "role", "search"]
+            : path === "student-administration/classes"
+              ? ["cursor", "limit", "search"]
+              : ["cursor", "limit"]
+        ).includes(key)
     )
   )
     return error("Invalid school record filter.", 400)

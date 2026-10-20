@@ -57,6 +57,7 @@ jobs:
       - run: npm ci
       - run: npm run prisma:generate
       - run: npm run build:packages
+      - run: npm run test:packages
       - run: npm run lint:aps
       - run: npm run typecheck:aps
       - run: npm run test:aps

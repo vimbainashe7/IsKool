@@ -9,7 +9,7 @@ for (const file of ['.env', 'apps/aps-api/.env', 'apps/sams-api/.env', 'frontend
   process.env = { ...inherited };
   loadEnvFile(file);
   for (const [key, value] of Object.entries(process.env)) {
-    if (!value || value.length < 9 || !/(PASSWORD|PRIVATE_KEY(?:_PEM)?|DATABASE_URL|AI_API_KEY|SERVICE_ROLE_KEY)$/.test(key)) continue;
+    if (!value || value.length < 9 || !/(PASSWORD|PRIVATE_KEY(?:_PEM)?|DATABASE_URL|AI_API_KEY|SERVICE_ROLE_KEY|INTERNAL_SERVICE_KEY)$/.test(key)) continue;
     secrets.add(value);
     secrets.add(value.replace(/\\n/g, '\n'));
     if (key.endsWith('DATABASE_URL')) {

@@ -14,6 +14,7 @@ import { RedisModule } from './infrastructure/redis/redis.module';
 import { StorageModule } from './infrastructure/storage/storage.module';
 import { TelemetryModule } from './infrastructure/telemetry/telemetry.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { SamsClientModule } from './modules/sams-client/sams-client.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { FoundationModule } from './modules/foundation/foundation.module';
 import { HealthModule } from './modules/health/health.module';
@@ -27,7 +28,14 @@ const redisEnabled = process.env.REDIS_ENABLED !== 'false';
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
-      load: [appConfig, authConfig, databaseConfig, redisConfig, samsInternalConfig, storageConfig],
+      load: [
+        appConfig,
+        authConfig,
+        databaseConfig,
+        redisConfig,
+        samsInternalConfig,
+        storageConfig
+      ],
       validationSchema: envValidationSchema,
       validationOptions: { abortEarly: false }
     }),
@@ -37,6 +45,7 @@ const redisEnabled = process.env.REDIS_ENABLED !== 'false';
     StorageModule,
     TelemetryModule,
     AuthModule,
+    SamsClientModule,
     AuditModule,
     HealthModule,
     FoundationModule
