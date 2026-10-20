@@ -42,16 +42,19 @@ describe('private internal HTTP contract', () => {
   });
   const auth = { validatePrincipal: jest.fn(async (p) => p) };
   const guard = new InternalReadGuard(config, auth as never);
-  const reads = new InternalReadService({
-    run: async (_p: unknown, _r: unknown, work: (tx: unknown) => unknown) =>
-      work({}),
-    ownProfile: async () => null,
-    context: async () => ({
+  const contexts = jest.fn(
+    async (_tx: unknown, _p: unknown, _q: { limit: number }) => ({
       authorized: true,
       asOf: new Date(),
       classes: [],
       totalClasses: 0
     })
+  );
+  const reads = new InternalReadService({
+    run: async (_p: unknown, _r: unknown, work: (tx: unknown) => unknown) =>
+      work({}),
+    ownProfile: async () => null,
+    context: contexts
   } as never);
   const providers = new Map<unknown, unknown>([
     [ConfigService, config],
@@ -115,6 +118,12 @@ describe('private internal HTTP contract', () => {
       classes: [],
       totalClasses: 0
     });
+    const defaultPage = await fetch(`${base}/context?role=student`, {
+      headers
+    });
+    expect(defaultPage.status).toBe(200);
+    expect(contexts.mock.calls.at(-1)?.[2].limit).toBe(25);
+    await defaultPage.body?.cancel();
     const invalid = await fetch(
       `${base}/context?role=student&schoolId=foreign`,
       { headers }

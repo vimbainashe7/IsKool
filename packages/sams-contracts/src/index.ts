@@ -22,11 +22,10 @@ import {
 
 export type AcademicRole = 'student' | 'teacher';
 export class ContextQuery {
-  @Expose() @IsIn(['student', 'teacher']) role!: AcademicRole;
-  @Expose() @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50) limit =
-    25;
-  @Expose() @IsOptional() @IsUUID() cursor?: string;
-  @Expose() @IsOptional() @IsUUID() classId?: string;
+  @IsIn(['student', 'teacher']) role!: AcademicRole;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50) limit = 25;
+  @IsOptional() @IsUUID() cursor?: string;
+  @IsOptional() @IsUUID() classId?: string;
 }
 export class StudentProfile {
   @Expose() @IsUUID() id!: string;

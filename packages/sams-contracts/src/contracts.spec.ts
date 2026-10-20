@@ -1,4 +1,6 @@
-import { parseContext } from './index';
+import { parseContext, ContextQuery } from './index';
+import { plainToInstance } from 'class-transformer';
+import { validateSync } from 'class-validator';
 const schoolId = 'a1000000-0000-4000-8000-000000000001';
 const membershipId = 'a3000000-0000-4000-8000-000000000004';
 const context = {
@@ -13,6 +15,22 @@ const context = {
   nextCursor: null
 };
 describe('versioned school context boundary', () => {
+  it('defaults an omitted query page size and rejects invalid limits or injected tenant fields', () => {
+    const q = plainToInstance(ContextQuery, { role: 'student' });
+    expect(q.limit).toBe(25);
+    expect(validateSync(q)).toHaveLength(0);
+    for (const value of [
+      { role: 'student', limit: '0' },
+      { role: 'student', limit: '51' },
+      { role: 'student', schoolId }
+    ])
+      expect(
+        validateSync(plainToInstance(ContextQuery, value), {
+          whitelist: true,
+          forbidNonWhitelisted: true
+        }).length
+      ).toBeGreaterThan(0);
+  });
   it('accepts a verified zero and strips unexpected provider fields', () => {
     expect(
       parseContext(

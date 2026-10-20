@@ -36,4 +36,6 @@ Fresh replay and restricted-role checks passed locally and in CI through `202610
 
 The Windows launcher now also checks its generated Prisma schema in CI (`npm run prisma:client:check`). Local service-key setup normalizes Windows/Unix line endings and verifies that unmanaged environment values remain unchanged; regression coverage includes adjacent database URLs and passwords. Existing passwords/signing keys remain intact.
 
+The query-contract suite additionally verifies the omitted page-size default (25), invalid limits and tenant-filter injection. Private-listener HTTP coverage verifies the same default after Nest transformation. These regressions were added after live testing exposed response-only transformer decorators overwriting the request default; the shared-contract suite now has four tests.
+
 Contract and security details: [Internal SAMS API](../contracts/INTERNAL_SAMS_API.md). PR and delivery state: [Product delivery](../progress/PRODUCT_DELIVERY.md).
