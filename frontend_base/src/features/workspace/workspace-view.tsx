@@ -15,6 +15,7 @@ import { PermissionState, EmptyState } from "@/components/feedback/state-views"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { AuthorizedClasses } from "@/features/classes/authorized-classes"
 import { safeReturnPath } from "@/lib/auth/safe-return-path"
 import type { RoleKey } from "@/lib/permissions/capabilities"
 const Gradebook = dynamic(
@@ -63,6 +64,18 @@ export function WorkspaceView({
     w.classes.find((c) => c.id === id)?.name ?? "Class"
   const [query, setQuery] = useState("")
   const search = useSearch(query)
+  if (
+    w.mode === "live" &&
+    role === "student" &&
+    (view === "classes" || view === "class")
+  )
+    return (
+      <AuthorizedClasses
+        key={`${w.schoolId}:${w.membershipId}:${view}:${resourceId ?? ""}`}
+        role="student"
+        resourceId={view === "class" ? resourceId : undefined}
+      />
+    )
   if (view === "dashboard") return <RoleDashboard role={role} />
   if (view === "gradebook") return <Gradebook />
   if (view === "ai") return <AiStudio />

@@ -1,4 +1,5 @@
 import { generateKeyPairSync } from 'node:crypto';
+process.env.SAMS_INTERNAL_ENABLED = 'false';
 
 const { privateKey, publicKey } = generateKeyPairSync('rsa', {
   modulusLength: 2048,

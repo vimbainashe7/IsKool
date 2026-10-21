@@ -33,6 +33,10 @@ describe('env validation', () => {
     const result = envValidationSchema.validate(validEnv);
     expect(result.error).toBeUndefined();
   });
+  it('allows a disabled private-read example but requires a separate key when enabled', () => {
+    expect(envValidationSchema.validate({...validEnv,SAMS_INTERNAL_ENABLED:false,SAMS_INTERNAL_SERVICE_KEY:''}).error).toBeUndefined();
+    expect(envValidationSchema.validate({...validEnv,SAMS_INTERNAL_ENABLED:true,SAMS_INTERNAL_SERVICE_KEY:''}).error).toBeDefined();
+  });
 
   it('accepts Redis-free local config without connection settings', () => {
     const redisFreeEnv: Partial<typeof validEnv> = { ...validEnv };

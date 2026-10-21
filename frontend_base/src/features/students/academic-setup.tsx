@@ -12,13 +12,27 @@ import {
   type References,
 } from "./contracts"
 
-export function AcademicSetup({ onSaved }: { onSaved: () => void }) {
-  const [data, setData] = useState<References | null>(null)
+export function AcademicSetup({
+  onSaved,
+  initial,
+}: {
+  onSaved: () => void
+  initial?: References
+}) {
+  const [data, setData] = useState<References | null>(initial ?? null)
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
   useEffect(() => {
+    if (initial) return
     let active = true
-    studentRequest("student-administration/context", referenceSchema)
+    const controller = new AbortController()
+    studentRequest(
+      "student-administration/context",
+      referenceSchema,
+      "GET",
+      undefined,
+      controller.signal
+    )
       .then((value) => {
         if (active) setData(value)
       })
@@ -32,8 +46,9 @@ export function AcademicSetup({ onSaved }: { onSaved: () => void }) {
       })
     return () => {
       active = false
+      controller.abort()
     }
-  }, [])
+  }, [initial])
   async function save(
     event: FormEvent<HTMLFormElement>,
     kind: "academic-years" | "academic-terms" | "classes"

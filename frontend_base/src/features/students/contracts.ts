@@ -84,11 +84,13 @@ export async function studentRequest<S extends z.ZodType>(
   path: string,
   schema: S,
   method = "GET",
-  body?: unknown
+  body?: unknown,
+  signal?: AbortSignal
 ): Promise<z.infer<S>> {
   const response = await fetch(`/api/sams/${path}`, {
     method,
     cache: "no-store",
+    signal,
     headers: body === undefined ? {} : { "content-type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   })

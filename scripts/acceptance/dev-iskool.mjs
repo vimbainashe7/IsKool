@@ -59,7 +59,7 @@ function backendBuildFingerprint() {
       else if (entry.isFile() && /\.(ts|json|prisma)$/.test(entry.name)) digest.update(file).update(readFileSync(join(root, file)));
     }
   }
-  for (const directory of ['apps', 'packages/auth', 'database/prisma']) visit(directory);
+  for (const directory of ['apps', 'packages', 'database/prisma']) visit(directory);
   digest.update(readFileSync(join(root, 'package-lock.json')));
   return digest.digest('hex');
 }
@@ -115,6 +115,11 @@ async function healthy(service) {
     if (!response.ok) return false;
     if (service.kind === 'frontend') return (await response.text()).includes('Welcome back') && await frontendRoutesReady(service.url);
     const body = await response.json();
+      if (service.kind === 'sams' && service.env.SAMS_INTERNAL_ENABLED === 'true') {
+        const internal = await fetch('http://127.0.0.1:3003/internal/v1/context?role=student', { signal: AbortSignal.timeout(5000), redirect: 'manual' });
+        if (internal.status !== 401 || internal.headers.get('cache-control') !== 'private, no-store') return false;
+        if ((await internal.json()).error?.code !== 'UNAUTHORIZED') return false;
+      }
     return body.status === 'ok' && body.dependencies?.database === 'ok' && ['ok', 'disabled'].includes(body.dependencies?.redis);
   } catch { return false; }
 }
@@ -156,6 +161,16 @@ try {
       await validateDatabase(env, `${kind}-api`);
       services.push({ kind, port, node: node22, env, cwd: root, args: [join(root, `apps/${kind}-api/dist/main.js`)], url: `http://127.0.0.1:${port}/api/v1/health/ready` });
     }
+  }
+  if (!frontendOnly) {
+    const sams = services.find(service => service.kind === 'sams').env;
+    const aps = services.find(service => service.kind === 'aps').env;
+    if ([sams, aps].some(env => env.SAMS_INTERNAL_ENABLED === 'true')) {
+      if ([sams, aps].some(env => env.SAMS_INTERNAL_ENABLED !== 'true') || !sams.SAMS_INTERNAL_SERVICE_KEY || sams.SAMS_INTERNAL_SERVICE_KEY !== aps.SAMS_INTERNAL_SERVICE_KEY ||
+        aps.SAMS_INTERNAL_BASE_URL !== 'http://127.0.0.1:3003/internal/v1' || sams.SAMS_INTERNAL_HOST !== '127.0.0.1' || String(sams.SAMS_INTERNAL_PORT) !== '3003')
+        fail('Internal-read configuration must match in both APIs on loopback port 3003. With services stopped run npm run dev:internal:setup. Values withheld.');
+      console.log('Internal reads configured; SAMS readiness will verify the protected listener on port 3003.');
+    } else console.log('Internal reads disabled: Student/Teacher Classes will report unavailable. See npm run dev:internal:setup in README.');
   }
   if (!backendOnly) {
     if (!existsSync(join(root, 'frontend_base/.env.local'))) fail('Missing frontend_base/.env.local. Follow the root README live API configuration.');

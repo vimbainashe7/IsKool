@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
+import { TeachingAssignments } from "@/features/classes/teaching-assignments"
 import { AdminSectionCard } from "@/features/admin-workspace/admin-components"
 import {
   studentRequest,
@@ -38,9 +39,13 @@ export function EnrollmentOverview() {
   }
   useEffect(() => {
     let active = true
+    const controller = new AbortController()
     studentRequest(
       `student-administration/enrollments?limit=25${page ? `&cursor=${page}` : ""}`,
-      pageSchema
+      pageSchema,
+      "GET",
+      undefined,
+      controller.signal
     )
       .then((result) => {
         if (active) {
@@ -58,6 +63,7 @@ export function EnrollmentOverview() {
       })
     return () => {
       active = false
+      controller.abort()
     }
   }, [page, retry])
   return (
@@ -124,7 +130,14 @@ export function SchoolClassOverview() {
   const [retry, setRetry] = useState(0)
   useEffect(() => {
     let active = true
-    studentRequest("student-administration/context", referenceSchema)
+    const controller = new AbortController()
+    studentRequest(
+      "student-administration/context",
+      referenceSchema,
+      "GET",
+      undefined,
+      controller.signal
+    )
       .then((value) => {
         if (active) {
           setData(value)
@@ -139,6 +152,7 @@ export function SchoolClassOverview() {
       })
     return () => {
       active = false
+      controller.abort()
     }
   }, [retry])
   return (
@@ -177,13 +191,17 @@ export function SchoolClassOverview() {
           </>
         )}
         <p>
-          Teacher assignments and academic class work are not available yet.
+          Choose Teaching assignments below to manage class access. Academic
+          work is not available yet.
         </p>
         <Link href="/admin/students" className="underline">
           Manage student enrollment
         </Link>
       </AdminSectionCard>
-      <AcademicSetup onSaved={() => setRetry((v) => v + 1)} />
+      <TeachingAssignments />
+      {data && (
+        <AcademicSetup initial={data} onSaved={() => setRetry((v) => v + 1)} />
+      )}
     </>
   )
 }

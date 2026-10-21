@@ -24,7 +24,9 @@ process.env.JWT_ACCESS_TTL_SECONDS = process.env.JWT_ACCESS_TTL_SECONDS ?? '900'
 process.env.JWT_REFRESH_TTL_SECONDS = process.env.JWT_REFRESH_TTL_SECONDS ?? '1209600';
 process.env.AUTH_DATABASE_URL = process.env.AUTH_DATABASE_URL ?? process.env.DATABASE_URL;
 process.env.SAMS_INTERNAL_BASE_URL =
-  process.env.SAMS_INTERNAL_BASE_URL ?? 'http://localhost:3002/api/v1/internal';
+  'http://127.0.0.1:3003/internal/v1';
+// Unit suites must not contact the ignored development service configuration.
+process.env.SAMS_INTERNAL_ENABLED = 'false';
 process.env.STORAGE_ENDPOINT = process.env.STORAGE_ENDPOINT ?? 'http://localhost:9000';
 process.env.STORAGE_BUCKET = process.env.STORAGE_BUCKET ?? 'aps-local';
 process.env.STORAGE_REGION = process.env.STORAGE_REGION ?? 'us-east-1';

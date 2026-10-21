@@ -32,6 +32,7 @@ $npm22 = Join-Path $env:NVM_HOME 'v22.20.0/node_modules/npm/bin/npm-cli.js'
 $env:Path = "$(Split-Path $node22);$env:Path"
 & $node22 $npm22 ci
 & $node22 $npm22 run prisma:generate
+& $node22 $npm22 run prisma:client:check
 & $node22 $npm22 run prisma:validate
 
 cd frontend_base
@@ -55,6 +56,15 @@ ISKOOL_DEV_ACCOUNTS=true
 ```
 
 Remove duplicate assignments, especially old preview flags. No database URL, private key or development password belongs in a NEXT_PUBLIC variable.
+
+After the authorized-class-context migration is verified and applied by the development migration owner, stop existing services and configure the private read boundary once:
+
+```powershell
+cd C:\Users\User\Documents\aiDo\IsKool_unified
+npm run dev:internal:setup
+```
+
+This configures matching credentials in the two ignored API env files, preserves passwords and signing keys, and backs up the previous configuration under ignored `tmp/local-dev`. It refuses conflicting existing keys and production environments. SAMS listens privately on `127.0.0.1:3003/internal/v1`; APS calls it with separate service and user credentials. Local hosted-database reads allow 8 seconds per attempt; the deployed default is 2 seconds. Neither startup nor this command applies migrations or seeds records. On a fresh database, replay the reviewed canonical migrations using the database guide before enabling the feature.
 
 ### Start all services
 
@@ -111,6 +121,14 @@ pnpm dev --port 3000
 | SAMS Swagger | http://127.0.0.1:3002/api/v1/docs |
 
 Both readiness responses must report `status=ok`, `database=ok` and `redis=disabled` (or healthy Redis). HTTP 200 alone is insufficient. A demo preview is not a live authenticated session.
+
+When internal reads are enabled, launcher readiness also verifies that the port 3003 listener rejects unauthenticated calls. It is intentionally absent from public Swagger. A disabled or unavailable boundary produces an explicit Classes error, never a successful empty list.
+
+### Test authorized classes
+
+As Admin, open **Students**, create or open an active student, and use **Student sign-in account** to link the correct existing active Student account. Create/select a current year, current term and class, then enroll the student. Under **Classes → Teaching assignments**, select that class and assign an active Teacher account. These controls change access and require an Admin/Registrar; they do not create sign-in accounts.
+
+Sign out, sign in as that Student, then open **Classes → Open class** and reload. Repeat as the assigned Teacher; their class shows the actual count of active students in current terms. Revoke the assignment as Admin and confirm the Teacher loses access after reload; restore it and confirm access returns. Classes outside the current academic year, inactive enrollments and unlinked student accounts do not grant academic access. Existing assignment, grade and timetable capabilities remain separate milestones.
 
 ### Developer sign-in
 

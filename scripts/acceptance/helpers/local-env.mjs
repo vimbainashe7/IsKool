@@ -1,6 +1,21 @@
 import { readFileSync } from 'node:fs';
 import { parseEnv } from 'node:util';
 
+export function updateLocalEnv(source, values) {
+  source = source.replace(/\r\n?/g, '\n');
+  const before = parseEnv(source);
+  let updated = source;
+  for (const [name, value] of Object.entries(values)) {
+    if (!/^[A-Z][A-Z_0-9]*$/.test(name) || !/^[A-Za-z0-9_:/.-]+$/.test(value)) throw new Error('Invalid managed development setting.');
+    const pattern = new RegExp(`^[ \\t]*(?:export[ \\t]+)?${name}=.*$`, 'm');
+    updated = pattern.test(updated) ? updated.replace(pattern, () => `${name}=${value}`) : `${updated.trimEnd()}\n${name}=${value}\n`;
+  }
+  const after = parseEnv(updated);
+  if (Object.entries(before).some(([key, value]) => !(key in values) && after[key] !== value) ||
+      Object.entries(values).some(([key, value]) => after[key] !== value)) throw new Error('Development settings would change unrelated configuration; no file written.');
+  return updated;
+}
+
 // Same precedence as the existing acceptance loader: inherited > root > service.
 // Parsing never modifies process.env, including when Prisma loads its own .env.
 export function readLocalEnv(files, inherited = process.env) {

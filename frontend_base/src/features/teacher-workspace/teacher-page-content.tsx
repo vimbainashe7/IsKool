@@ -14,6 +14,8 @@ import {
   TeacherToolSummary,
 } from "./teacher-pages"
 import styles from "./teacher-workspace.module.css"
+import { useWorkspace } from "@/features/workspace/workspace-provider"
+import { AuthorizedClasses } from "@/features/classes/authorized-classes"
 export function TeacherPageContent({
   view,
   resourceId,
@@ -23,6 +25,17 @@ export function TeacherPageContent({
   resourceId?: string
   title: string
 }) {
+  const { data: workspace } = useWorkspace()
+  if (workspace.mode === "live" && (view === "classes" || view === "class"))
+    return (
+      <div className={styles.page}>
+        <AuthorizedClasses
+          key={`${workspace.schoolId}:${workspace.membershipId}:${view}:${resourceId ?? ""}`}
+          role="teacher"
+          resourceId={view === "class" ? resourceId : undefined}
+        />
+      </div>
+    )
   if (view === "classes") return <TeacherClasses />
   if (view === "class") return <TeacherClassDetail id={resourceId ?? ""} />
   if (view === "assignments") return <TeacherAssignments />

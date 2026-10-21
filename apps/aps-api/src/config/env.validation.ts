@@ -2,10 +2,14 @@ import * as Joi from 'joi';
 
 export const envValidationSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'test', 'production').required(),
-  ISKOOL_ENVIRONMENT: Joi.string().valid('development', 'staging', 'testing', 'production').optional(),
+  ISKOOL_ENVIRONMENT: Joi.string()
+    .valid('development', 'staging', 'testing', 'production')
+    .optional(),
   SERVICE_NAME: Joi.string().min(2).required(),
   PORT: Joi.number().port().required(),
-  DATABASE_URL: Joi.string().uri({ scheme: ['postgresql', 'postgres'] }).required(),
+  DATABASE_URL: Joi.string()
+    .uri({ scheme: ['postgresql', 'postgres'] })
+    .required(),
   REDIS_ENABLED: Joi.boolean().truthy('true').falsy('false').default(true),
   REDIS_HOST: Joi.when('REDIS_ENABLED', {
     is: true,
@@ -26,14 +30,33 @@ export const envValidationSchema = Joi.object({
   JWT_KEY_ID: Joi.string().min(1).required(),
   JWT_ACCESS_TTL_SECONDS: Joi.number().integer().min(60).max(3600).required(),
   JWT_REFRESH_TTL_SECONDS: Joi.number().integer().min(3600).required(),
-  AUTH_DATABASE_URL: Joi.string().uri({ scheme: ['postgresql', 'postgres'] }).optional(),
+  AUTH_DATABASE_URL: Joi.string()
+    .uri({ scheme: ['postgresql', 'postgres'] })
+    .optional(),
   SAMS_INTERNAL_BASE_URL: Joi.string().uri().required(),
+  SAMS_INTERNAL_ENABLED: Joi.boolean()
+    .truthy('true')
+    .falsy('false')
+    .default(false),
+  SAMS_INTERNAL_SERVICE_KEY: Joi.when('SAMS_INTERNAL_ENABLED', {
+    is: true,
+    then: Joi.string().min(43).max(86).required(),
+    otherwise: Joi.string().allow('').min(43).max(86).optional()
+  }),
+  SAMS_INTERNAL_TIMEOUT_MS: Joi.number()
+    .integer()
+    .min(100)
+    .max(10000)
+    .default(2000),
   STORAGE_ENDPOINT: Joi.string().uri().required(),
   STORAGE_BUCKET: Joi.string().min(3).required(),
   STORAGE_REGION: Joi.string().required(),
   STORAGE_ACCESS_KEY: Joi.string().required(),
   STORAGE_SECRET_KEY: Joi.string().required(),
-  STORAGE_FORCE_PATH_STYLE: Joi.boolean().truthy('true').falsy('false').required(),
+  STORAGE_FORCE_PATH_STYLE: Joi.boolean()
+    .truthy('true')
+    .falsy('false')
+    .required(),
   ALLOWED_ORIGINS: Joi.string().required(),
   LOG_LEVEL: Joi.string().valid('error', 'warn', 'info', 'debug').required()
 }).custom((value: Record<string, unknown>, helpers) => {
@@ -43,7 +66,8 @@ export const envValidationSchema = Joi.object({
     const redisDisabled = value.REDIS_ENABLED === false;
     if (weakStorageSecret || emptyRedisPassword || redisDisabled) {
       return helpers.error('any.invalid', {
-        message: 'Production configuration must not use local development secrets.'
+        message:
+          'Production configuration must not use local development secrets.'
       });
     }
   }

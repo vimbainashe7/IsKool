@@ -1,0 +1,1 @@
+{"compilerOptions":{"module":"commonjs","moduleResolution":"node","declaration":true,"outDir":"dist","rootDir":"src","target":"ES2022","strict":true,"skipLibCheck":true,"experimentalDecorators":true,"emitDecoratorMetadata":true,"esModuleInterop":true},"include":["src/**/*.ts"]}

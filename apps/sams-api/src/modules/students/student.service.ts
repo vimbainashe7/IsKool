@@ -98,12 +98,7 @@ export class StudentService {
   }
 
   referenceData(p: AuthPrincipal, r: string) {
-    return this.run(p, r, async tx => {
-      const years = await tx.academicYear.findMany({ where: { schoolId: p.schoolId }, take: 101, orderBy: { startsOn: 'desc' } });
-      const terms = await tx.academicTerm.findMany({ where: { schoolId: p.schoolId }, take: 101, orderBy: { startsOn: 'desc' } });
-      const classes = await tx.schoolClass.findMany({ where: { schoolId: p.schoolId }, take: 101, orderBy: { name: 'asc' } });
-      return { years: years.slice(0, 100), terms: terms.slice(0, 100), classes: classes.slice(0, 100), truncated: years.length > 100 || terms.length > 100 || classes.length > 100 };
-    });
+    return this.run(p, r, (tx) => this.records.referenceData(tx, p.schoolId));
   }
 
   createYear(p: AuthPrincipal, r: string, dto: CreateYearDto) {
