@@ -2,6 +2,7 @@ import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { randomUUID } from "node:crypto"
 import { getIsKoolApiUrls, iskoolAuthCookies } from "@/lib/iskool-auth/shared"
+import { isSameOrigin } from "@/lib/auth/same-origin"
 export const dynamic = "force-dynamic"
 const headers = { "Cache-Control": "private, no-store" }
 function error(message: string, status: number) {
@@ -34,7 +35,7 @@ async function proxy(
     )
   )
     return error("Invalid assignment filter.", 400)
-  if (method !== "GET" && request.headers.get("origin") !== url.origin)
+  if (method !== "GET" && !isSameOrigin(request))
     return error("This request could not be verified.", 403)
   const token = (await cookies()).get(iskoolAuthCookies.apsAccess)?.value
   if (!token) return error("Sign in to your Teacher workspace.", 401)
