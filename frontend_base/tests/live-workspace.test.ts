@@ -110,6 +110,35 @@ it("does not call student projections when an Admin dashboard requests academic 
   ).toEqual(totals)
   expect(fetcher).toHaveBeenCalledTimes(1)
 })
+it("recovers one transient academic read within the original deadline", async () => {
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce(Response.json({}, { status: 503 }))
+    .mockResolvedValueOnce(Response.json(academic))
+  vi.stubGlobal("fetch", fetcher)
+  expect(
+    (await loadWorkspace(academicPrincipal, { includeAcademic: true }))
+      .academicContext
+  ).toEqual(academic)
+  expect(fetcher).toHaveBeenCalledTimes(2)
+  expect(fetcher.mock.calls[0][1].signal).toBe(fetcher.mock.calls[1][1].signal)
+})
+it("does not retry authorization failures or invalid responses and bounds outage retries", async () => {
+  for (const [status, body, attempts] of [
+    [403, {}, 1],
+    [200, {}, 1],
+    [503, {}, 2],
+  ] as const) {
+    const fetcher = vi
+      .fn()
+      .mockImplementation(async () => Response.json(body, { status }))
+    vi.stubGlobal("fetch", fetcher)
+    await expect(
+      loadWorkspace(academicPrincipal, { includeAcademic: true })
+    ).rejects.toThrow()
+    expect(fetcher).toHaveBeenCalledTimes(attempts)
+  }
+})
 it("keeps failed or malformed summary requests unavailable", async () => {
   for (const response of [
     Response.json({}, { status: 503 }),

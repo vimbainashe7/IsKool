@@ -14,7 +14,7 @@ Linear reconnected on 2026-10-20; VIM-51 and VIM-71 are Done after owner accepta
 
 Identity migrations and scoped runtime security details: `docs/contracts/SCHOOL_IDENTITY_SETTINGS.md`. Owner walkthrough: `docs/acceptance/VIM-71.md`. Earlier integration/debug evidence remains traceable in PR #7 and Git history.
 
-Current increment: VIM-62 dashboard projections on `feat/authoritative-dashboard-projections`. Student and Teacher dashboards consume the authorized APS class context with three preview records and full totals; existing Admin registry totals remain authoritative. Unsupported academic work is explicitly unavailable. Backend boundary and RLS are reused; no new migration. Local frontend unit suite: 154 passed, lint/typecheck passed. Real browser and exact-head CI verification are pending; VIM-62 remains In Progress and requires separate owner acceptance/merge approval.
+Current increment: VIM-62 dashboard projections on `feat/authoritative-dashboard-projections`. Student and Teacher dashboards consume the authorized APS class context with three preview records and full totals; existing Admin registry totals remain authoritative. Unsupported academic work is explicitly unavailable. Backend boundary and RLS are reused; no new migration. Local frontend unit suite: 154 passed; the two added recovery regressions and affected dashboard tests passed (11/11). Dashboard reads retry a server error once within the existing deadline; speculative class-link prefetch is disabled. Lint/typecheck verified before live acceptance. Real browser and exact-head CI verification are pending; VIM-62 remains In Progress and requires separate owner acceptance/merge approval.
 
 ## Current capability and gate
 

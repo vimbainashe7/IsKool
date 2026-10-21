@@ -25,7 +25,7 @@ export function DashboardClasses({ role }: { role: "student" | "teacher" }) {
     >
       <div className={styles.sectionHeading}>
         <h2>{student ? "My Courses" : "My Classes"}</h2>
-        <Link href={`/${role}/classes`}>
+        <Link href={`/${role}/classes`} prefetch={false}>
           View all <ArrowUpRight size={14} aria-hidden="true" />
         </Link>
       </div>
@@ -38,6 +38,7 @@ export function DashboardClasses({ role }: { role: "student" | "teacher" }) {
           <Link
             key={c.id}
             href={`/${role}/classes/${c.id}`}
+            prefetch={false}
             className={student ? studentStyles.courseLink : "block"}
           >
             <Card className={student ? studentStyles.course : "p-4"}>
@@ -91,7 +92,11 @@ export function DashboardClasses({ role }: { role: "student" | "teacher" }) {
       {context.totalClasses > context.classes.length && (
         <p className={`${styles.meta} mt-3`}>
           Showing {context.classes.length} of {context.totalClasses}.{" "}
-          <Link className="underline" href={`/${role}/classes`}>
+          <Link
+            className="underline"
+            href={`/${role}/classes`}
+            prefetch={false}
+          >
             View all classes
           </Link>
         </p>
