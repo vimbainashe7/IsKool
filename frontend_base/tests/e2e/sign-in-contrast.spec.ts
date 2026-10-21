@@ -2,6 +2,34 @@ import { expect, test } from "@playwright/test"
 
 test.use({ trace: "off" })
 
+test("sign-in and sign-up fit standard desktop and phone viewports", async ({
+  page,
+}) => {
+  for (const viewport of [
+    { width: 1366, height: 768 },
+    { width: 1024, height: 640 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport)
+    for (const path of ["/sign-in", "/sign-up"]) {
+      await page.goto(path)
+      await expect(page.getByLabel("Email", { exact: true })).toBeVisible()
+      await expect(page.getByLabel("Development seed password")).toHaveCount(0)
+      const bounds = await page.evaluate(() => ({
+        height: document.documentElement.scrollHeight,
+        width: document.documentElement.scrollWidth,
+        viewportHeight: innerHeight,
+        viewportWidth: innerWidth,
+      }))
+      expect(
+        bounds.height,
+        `${path} at ${viewport.width}×${viewport.height}`
+      ).toBeLessThanOrEqual(bounds.viewportHeight + 1)
+      expect(bounds.width).toBeLessThanOrEqual(bounds.viewportWidth + 1)
+    }
+  }
+})
+
 test("sign-in labels, hints and entered text remain readable with a saved dark workspace theme", async ({
   page,
 }, info) => {

@@ -134,7 +134,7 @@ Sign out, sign in as that Student, then open **Classes → Open class** and relo
 
 Open `/sign-in`. In this canonical development checkout, the existing shared demo password and account emails are written in local **`Passwords.txt`** at the repository root. Open it with `notepad .\Passwords.txt`. This file is Git-ignored and must stay local; it is not part of a fresh clone. If absent, obtain the configured development credential from the project owner. It matches the ignored backend `DEV_SEED_PASSWORD`; do not rotate or reseed accounts merely to sign in.
 
-In **Development accounts**, paste that password into **Development seed password**, select Student, Teacher or Admin, then click **Sign in**. Selecting a role only fills the form. Public authentication screens keep their readable light palette even when the saved workspace preference is dark.
+Select **Student**, **Teacher** or **Admin** using the buttons at the bottom of the left panel (below the form on mobile). Enter the local demo password in the normal **Password** field, then click **Sign in**. Switching accounts preserves the password already entered in this mounted form; selecting a role only fills the email and never grants access. Public authentication screens keep their readable light palette even when the saved workspace preference is dark.
 
 | Button | Email filled |
 | --- | --- |
