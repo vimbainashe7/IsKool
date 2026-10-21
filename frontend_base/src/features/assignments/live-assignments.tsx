@@ -428,7 +428,10 @@ function AssignmentForm({ resourceId }: { resourceId?: string }) {
         ) : (
           classes && (
             <form onSubmit={save} className="space-y-5">
-              <fieldset disabled={busy || !editable} className="space-y-5">
+              <fieldset
+                disabled={busy || !editable}
+                className="space-y-5 [&_input:disabled]:opacity-100 [&_textarea:disabled]:opacity-100"
+              >
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <Label htmlFor="assignment-class">Class</Label>

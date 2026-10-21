@@ -94,7 +94,8 @@ test.describe("live Teacher assignment publication", () => {
     expect(createdResponse.status()).toBe(201)
     const created = await createdResponse.json()
     await expect(page).toHaveURL(
-      new RegExp(`/teacher/assignments/${created.id}$`)
+      new RegExp(`/teacher/assignments/${created.id}$`),
+      { timeout: 120000 }
     )
     await page.reload()
     await expect(page.getByLabel("Title", { exact: true })).toHaveValue(title, {

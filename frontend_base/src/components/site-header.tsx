@@ -25,6 +25,11 @@ export function SiteHeader({ context }: { context: IsKoolContext }) {
   const [open, setOpen] = useState(false)
   const ready = useSyncExternalStore(subscribe, clientReady, serverReady)
   const pathname = usePathname()
+  const assignmentLabel = pathname.startsWith("/teacher/assignments/")
+    ? pathname.endsWith("/new")
+      ? "Create assignment"
+      : "Assignment details"
+    : null
   useLayoutEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === "k" && (e.ctrlKey || e.metaKey)) {
@@ -59,11 +64,12 @@ export function SiteHeader({ context }: { context: IsKoolContext }) {
                 <span className="capitalize">
                   {pathname.startsWith("/admin/students/")
                     ? "Student record"
-                    : pathname
+                    : (assignmentLabel ??
+                      pathname
                         .split("/")
                         .filter(Boolean)
                         .slice(-1)[0]
-                        ?.replace(/-/g, " ")}
+                        ?.replace(/-/g, " "))}
                 </span>
               </nav>
             </div>
