@@ -65,7 +65,7 @@ it("shows authoritative Student classes/periods and total without inventing cour
   expect(screen.getByText("Academic year 2026")).toBeVisible()
   expect(screen.getByText(/Current Term/)).toBeVisible()
   expect(
-    screen.getByRole("heading", { name: "My Assignments", exact: true })
+    screen.getByRole("heading", { name: "My Assignments" })
   ).toBeVisible()
   expect(
     screen.queryByText(
