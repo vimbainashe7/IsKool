@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AuthorizedClasses } from "@/features/classes/authorized-classes"
+import { StudentWork } from '@/features/assignments/student-work'
 import { safeReturnPath } from "@/lib/auth/safe-return-path"
 import type { RoleKey } from "@/lib/permissions/capabilities"
 const Gradebook = dynamic(
@@ -64,6 +65,8 @@ export function WorkspaceView({
     w.classes.find((c) => c.id === id)?.name ?? "Class"
   const [query, setQuery] = useState("")
   const search = useSearch(query)
+  if(w.mode === 'live' && role === 'student' && (view === 'assignments' || view === 'assignment'))
+    return <StudentWork resourceId={view === 'assignment' ? resourceId : undefined}/>
   if (
     w.mode === "live" &&
     role === "student" &&

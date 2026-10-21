@@ -48,7 +48,7 @@ export class AssignmentRepository {
         if (["P2003", "P2004"].includes(error.code))
           throw new BusinessRuleError(
             "INVALID_ASSIGNMENT_CONTEXT",
-            "Check the class, term, deadline and your current teaching access.",
+            "Check the class, term, deadline and your current school access.",
           );
       }
       throw error;

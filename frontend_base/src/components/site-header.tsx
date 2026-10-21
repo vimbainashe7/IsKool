@@ -25,7 +25,7 @@ export function SiteHeader({ context }: { context: IsKoolContext }) {
   const [open, setOpen] = useState(false)
   const ready = useSyncExternalStore(subscribe, clientReady, serverReady)
   const pathname = usePathname()
-  const assignmentLabel = pathname.startsWith("/teacher/assignments/")
+  const assignmentLabel = /^\/(teacher|student)\/assignments\//.test(pathname)
     ? pathname.endsWith("/new")
       ? "Create assignment"
       : "Assignment details"

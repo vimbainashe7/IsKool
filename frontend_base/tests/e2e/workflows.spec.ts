@@ -1,15 +1,38 @@
 import { test, expect, type Page } from "@playwright/test"
 import AxeBuilder from "@axe-core/playwright"
 
+async function waitForWorkspace(page: Page) {
+  // Observe the interactive root set atomically during navigation rather
+  // than applying a strict singleton assertion to intermediate/hidden roots.
+  await expect
+    .poll(
+      async () =>
+        page
+          .locator("fieldset[aria-busy]:visible")
+          .evaluateAll(
+            (roots) =>
+              roots.length === 1 &&
+              roots[0].getAttribute("aria-busy") === "false"
+          )
+          .catch((error: unknown) => {
+            if (
+              error instanceof Error &&
+              error.message.includes("Execution context was destroyed")
+            )
+              return false
+            throw error
+          }),
+      {
+        timeout: 60000,
+        message: "Exactly one visible hydrated workspace must be ready",
+      }
+    )
+    .toBe(true)
+}
 async function gotoApp(page: Page, route: string) {
   await page.goto(route, { waitUntil: "domcontentloaded" })
-  if (/^\/(student|teacher|admin)\//.test(new URL(page.url()).pathname)) {
-    await expect(page.locator("fieldset[aria-busy]")).toHaveAttribute(
-      "aria-busy",
-      "false",
-      { timeout: 60000 }
-    )
-  }
+  if (/^\/(student|teacher|admin)\//.test(new URL(page.url()).pathname))
+    await waitForWorkspace(page)
 }
 
 async function preview(page: Page, role: string) {
@@ -34,7 +57,10 @@ test("unauthenticated protection, callback failure, recovery form and expired se
   await expect(page).toHaveURL(/sign-in/)
   await page.getByRole("link", { name: "Forgot your password?" }).click()
   await expect(page.getByRole("textbox", { name: "Email" })).toBeVisible()
-  await gotoApp(page, "/auth/confirm?token_hash=bad&type=recovery&next=//evil.example")
+  await gotoApp(
+    page,
+    "/auth/confirm?token_hash=bad&type=recovery&next=//evil.example"
+  )
   await expect(page).toHaveURL(/sign-in\?notice=invalid-link/)
   await preview(page, "student")
   await page.context().clearCookies()
@@ -65,10 +91,7 @@ test("student role guards, assignment upload and server-confirmed submission per
     .getByRole("link", { name: "Algebra: simultaneous equations" })
     .click()
   await expect(page).toHaveURL(/student\/assignments\/assignment-1/)
-  await expect(page.locator("fieldset[aria-busy]")).toHaveAttribute(
-    "aria-busy",
-    "false"
-  )
+  await waitForWorkspace(page)
   await page.getByLabel("Choose a file or drop it here").setInputFiles({
     name: "answers.txt",
     mimeType: "text/plain",
@@ -215,7 +238,9 @@ test("admin search, user detail, confirmed role change, context switch and logou
   await page.getByRole("button", { name: "Switch work context" }).click()
   await page.getByRole("menuitem", { name: "teacher", exact: true }).click()
   await expect(page).toHaveURL(/teacher\/dashboard/)
-  await expect(page.getByRole("button", { name: "Search IsKool" })).toBeEnabled()
+  await expect(
+    page.getByRole("button", { name: "Search IsKool" })
+  ).toBeEnabled()
   await page.getByRole("button", { name: "Profile menu" }).click()
   await page.getByRole("button", { name: "Sign out", exact: true }).click()
   await expect(page).toHaveURL(/sign-in/)
@@ -314,7 +339,10 @@ for (const width of [360, 390, 768, 1024, 1280, 1440]) {
       ).toBe(false)
     }
     if (width === 1440) {
-      await page.screenshot({ path: "test-results/admin-1440.png", fullPage: true })
+      await page.screenshot({
+        path: "test-results/admin-1440.png",
+        fullPage: true,
+      })
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
         .analyze()

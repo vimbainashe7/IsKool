@@ -584,8 +584,7 @@ function AssignmentForm({ resourceId }: { resourceId?: string }) {
           </div>
         )}
         <p className="text-sm text-muted-foreground">
-          Text assignments are saved in your school records. Attachments and
-          student submissions are not available yet.
+          Students can submit up to three text answers during active term enrollment. Late answers are marked late; attempts are retained. Grading and files are not available yet.
         </p>
       </CardContent>
     </Card>

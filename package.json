@@ -56,6 +56,7 @@
     "smoke:vim-52": "node scripts/acceptance/vim-52.mjs",
     "smoke:dashboards": "node scripts/acceptance/dashboards.mjs",
     "smoke:assignments": "node scripts/acceptance/assignment-publication.mjs",
+    "smoke:submissions": "node scripts/acceptance/student-submissions.mjs",
     "smoke:auth": "node scripts/acceptance/m2-auth.mjs",
     "smoke:authorization": "npm run build:packages && node scripts/acceptance/m2-security.mjs",
     "smoke:audit": "node scripts/acceptance/m2-audit.mjs",
