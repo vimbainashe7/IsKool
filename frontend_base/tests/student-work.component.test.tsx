@@ -1,5 +1,5 @@
 import { afterEach, it, expect, vi } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen, fireEvent } from "@testing-library/react"
 import { StudentWork } from "@/features/assignments/student-work"
 import { WorkspaceProvider } from "@/features/workspace/workspace-provider"
 import { createWorkspaceFixture } from "@/dev/workspace-fixture"
@@ -12,7 +12,7 @@ const initial = {
   mode: "live" as const,
 }
 afterEach(() => vi.unstubAllGlobals())
-it("renders the authorized backend submission status on the dashboard card", async () => {
+it("requires an actual answer change before offering a new attempt", async () => {
   vi.stubGlobal(
     "fetch",
     vi
@@ -20,47 +20,105 @@ it("renders the authorized backend submission status on the dashboard card", asy
       .mockResolvedValue(
         new Response(
           JSON.stringify({
-            schoolId: id,
-            membershipId: id,
             policy: {
               maxAttempts: 3,
               lateAccepted: true,
               duplicateWindowSeconds: 30,
             },
-            items: [
+            assignment: {
+              id,
+              schoolId: id,
+              classId: id,
+              academicYearId: id,
+              academicTermId: id,
+              authorMembershipId: id,
+              title: "Persisted class work",
+              instructions: "Explain",
+              totalMarks: 10,
+              dueAt: date,
+              status: "published",
+              version: 2,
+              publishedAt: date,
+              createdAt: date,
+              updatedAt: date,
+            },
+            submissions: [
               {
                 id,
+                assignmentId: id,
                 schoolId: id,
-                classId: id,
-                academicYearId: id,
-                academicTermId: id,
-                authorMembershipId: id,
-                title: "Persisted class work",
-                instructions: "Explain",
-                totalMarks: 10,
-                dueAt: date,
-                status: "published",
-                version: 2,
-                publishedAt: date,
-                createdAt: date,
-                updatedAt: date,
-                latestSubmission: {
-                  id,
-                  assignmentId: id,
-                  schoolId: id,
-                  studentId: id,
-                  studentMembershipId: id,
-                  text: "Saved work",
-                  attempt: 2,
-                  status: "late",
-                  submittedAt: date,
-                },
+                studentId: id,
+                studentMembershipId: id,
+                text: "Saved work",
+                attempt: 1,
+                status: "submitted",
+                submittedAt: date,
               },
             ],
-            nextCursor: null,
           })
         )
       )
+  )
+  render(
+    <WorkspaceProvider initial={initial}>
+      <StudentWork resourceId={id} />
+    </WorkspaceProvider>
+  )
+  const answer = await screen.findByLabelText("Answer"),
+    button = screen.getByRole("button", { name: "Resubmit answer" })
+  expect(button).toBeDisabled()
+  fireEvent.change(answer, { target: { value: "Saved work  " } })
+  expect(button).toBeDisabled()
+  fireEvent.change(answer, { target: { value: "Revised work" } })
+  expect(button).toBeEnabled()
+})
+it("renders the authorized backend submission status on the dashboard card", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          schoolId: id,
+          membershipId: id,
+          policy: {
+            maxAttempts: 3,
+            lateAccepted: true,
+            duplicateWindowSeconds: 30,
+          },
+          items: [
+            {
+              id,
+              schoolId: id,
+              classId: id,
+              academicYearId: id,
+              academicTermId: id,
+              authorMembershipId: id,
+              title: "Persisted class work",
+              instructions: "Explain",
+              totalMarks: 10,
+              dueAt: date,
+              status: "published",
+              version: 2,
+              publishedAt: date,
+              createdAt: date,
+              updatedAt: date,
+              latestSubmission: {
+                id,
+                assignmentId: id,
+                schoolId: id,
+                studentId: id,
+                studentMembershipId: id,
+                text: "Saved work",
+                attempt: 2,
+                status: "late",
+                submittedAt: date,
+              },
+            },
+          ],
+          nextCursor: null,
+        })
+      )
+    )
   )
   render(
     <WorkspaceProvider initial={initial}>

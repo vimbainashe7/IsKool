@@ -102,6 +102,9 @@ test.describe("live Student assignment submission", () => {
       await page
         .getByLabel("Academic term", { exact: true })
         .selectOption(term.id)
+      await page
+        .getByLabel("Enrollment status", { exact: true })
+        .selectOption("active")
       const enrolled = page.waitForResponse(
         (r) =>
           r.request().method() === "POST" && r.url().includes("/enrollments")
@@ -172,6 +175,7 @@ test.describe("live Student assignment submission", () => {
       .getByRole("button", { name: "Resubmit answer", exact: true })
       .click()
     expect((await second).status()).toBe(201)
+    await expect(page.getByRole("heading", { name: /Attempt 2/ })).toBeVisible()
     await page.reload()
     await expect(page.getByLabel("Answer", { exact: true })).toHaveValue(
       "My revised reasoned answer.",

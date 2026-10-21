@@ -16,6 +16,9 @@ are accepted and visibly marked late. Original answers and server timestamps
 remain in history. The policy is fixed and shown to Teacher and Student; school
 policy configuration, files, grading and release are subsequent capabilities.
 
+Resubmit becomes available only after changing the saved answer; whitespace-only
+changes cannot accidentally spend an attempt.
+
 Each student has ten submission requests per rolling minute across all assignments.
 The database serializes budget consumption, which commits before submission
 validation, so duplicates and rejected work also spend the budget. An identical

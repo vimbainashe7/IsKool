@@ -292,7 +292,10 @@ function StudentAnswer({ id }: { id: string }) {
                 </p>
                 <Button
                   disabled={
-                    busy || !answer.trim() || detail.submissions.length >= 3
+                    busy ||
+                    !answer.trim() ||
+                    detail.submissions.length >= 3 ||
+                    (detail.submissions.length > 0 && answer.trim() === saved)
                   }
                   type="submit"
                 >
