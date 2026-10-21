@@ -39,7 +39,11 @@ export function DashboardClasses({ role }: { role: "student" | "teacher" }) {
             key={c.id}
             href={`/${role}/classes/${c.id}`}
             prefetch={false}
-            className={student ? studentStyles.courseLink : "block"}
+            className={
+              student
+                ? `${studentStyles.courseLink} ${context.classes.length === 1 ? "col-span-full" : ""}`
+                : "block"
+            }
           >
             <Card className={student ? studentStyles.course : "p-4"}>
               {student && (
