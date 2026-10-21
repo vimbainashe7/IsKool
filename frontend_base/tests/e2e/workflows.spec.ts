@@ -1,28 +1,38 @@
 import { test, expect, type Page } from "@playwright/test"
 import AxeBuilder from "@axe-core/playwright"
 
+async function waitForWorkspace(page: Page) {
+  // Observe the interactive root set atomically during navigation rather
+  // than applying a strict singleton assertion to intermediate/hidden roots.
+  await expect
+    .poll(
+      async () =>
+        page
+          .locator("fieldset[aria-busy]:visible")
+          .evaluateAll(
+            (roots) =>
+              roots.length === 1 &&
+              roots[0].getAttribute("aria-busy") === "false"
+          )
+          .catch((error: unknown) => {
+            if (
+              error instanceof Error &&
+              error.message.includes("Execution context was destroyed")
+            )
+              return false
+            throw error
+          }),
+      {
+        timeout: 60000,
+        message: "Exactly one visible hydrated workspace must be ready",
+      }
+    )
+    .toBe(true)
+}
 async function gotoApp(page: Page, route: string) {
   await page.goto(route, { waitUntil: "domcontentloaded" })
-  if (/^\/(student|teacher|admin)\//.test(new URL(page.url()).pathname)) {
-    // Observe the interactive root set atomically during navigation rather
-    // than applying a strict singleton assertion to intermediate/hidden roots.
-    await expect
-      .poll(
-        () =>
-          page
-            .locator("fieldset[aria-busy]:visible")
-            .evaluateAll(
-              (roots) =>
-                roots.length === 1 &&
-                roots[0].getAttribute("aria-busy") === "false"
-            ),
-        {
-          timeout: 60000,
-          message: "Exactly one visible hydrated workspace must be ready",
-        }
-      )
-      .toBe(true)
-  }
+  if (/^\/(student|teacher|admin)\//.test(new URL(page.url()).pathname))
+    await waitForWorkspace(page)
 }
 
 async function preview(page: Page, role: string) {
@@ -81,10 +91,7 @@ test("student role guards, assignment upload and server-confirmed submission per
     .getByRole("link", { name: "Algebra: simultaneous equations" })
     .click()
   await expect(page).toHaveURL(/student\/assignments\/assignment-1/)
-  await expect(page.locator("fieldset[aria-busy]")).toHaveAttribute(
-    "aria-busy",
-    "false"
-  )
+  await waitForWorkspace(page)
   await page.getByLabel("Choose a file or drop it here").setInputFiles({
     name: "answers.txt",
     mimeType: "text/plain",
