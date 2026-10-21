@@ -18,6 +18,7 @@ import { SamsClientModule } from './modules/sams-client/sams-client.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { FoundationModule } from './modules/foundation/foundation.module';
 import { HealthModule } from './modules/health/health.module';
+import { AssignmentModule } from './modules/assignments/assignment.module';
 import { JsonLogger } from './common/logging/logger.service';
 import { RequestContextInterceptor } from './common/interceptors/request-context.interceptor';
 
@@ -48,6 +49,7 @@ const redisEnabled = process.env.REDIS_ENABLED !== 'false';
     SamsClientModule,
     AuditModule,
     HealthModule,
+    AssignmentModule,
     FoundationModule
   ],
   providers: [JsonLogger, RequestContextInterceptor],

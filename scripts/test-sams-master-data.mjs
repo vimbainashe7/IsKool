@@ -56,3 +56,12 @@ console.log('PASS APS direct teacher assignment access denied');
 const apsBranding=sql('UPDATE public.schools SET name=\'Denied\',branding_version=branding_version+1;', 'iskool_master_aps_test', true);
 if (apsBranding.status===0 || !apsBranding.stderr.includes('permission denied')) throw new Error('APS must not mutate school branding');
 console.log('PASS APS school branding writes denied');
+sql(readFileSync('scripts/sql/assignment-publication-fixtures.sql','utf8'));
+console.log(sql(readFileSync('scripts/sql/assignment-publication-rls.sql','utf8'),'iskool_master_aps_test').stdout.split(/\r?\n/).filter(line=>line.includes('PASS ')).join('\n').trim());
+for (const change of ["UPDATE public.class_teachers SET status='revoked',version=version+1 WHERE class_id='b8000000-0000-4000-8000-000000000001'", "UPDATE public.memberships SET status='inactive' WHERE id='a3000000-0000-4000-8000-000000000003'"]) {
+  sql(change);
+  sql(`BEGIN; SELECT set_config('iskool.user_id','a2000000-0000-4000-8000-000000000003',true),set_config('iskool.membership_id','a3000000-0000-4000-8000-000000000003',true),set_config('iskool.school_id','a1000000-0000-4000-8000-000000000001',true); DO $$ BEGIN IF EXISTS(SELECT 1 FROM public.assignments) THEN RAISE EXCEPTION 'Revoked or disabled Teacher retained assignments'; END IF; END; $$; ROLLBACK;`,'iskool_master_aps_test');
+  sql("UPDATE public.memberships SET status='active' WHERE id='a3000000-0000-4000-8000-000000000003'");
+  sql("BEGIN; SELECT set_config('iskool.user_id','a2000000-0000-4000-8000-000000000001',true),set_config('iskool.membership_id','a3000000-0000-4000-8000-000000000001',true),set_config('iskool.school_id','a1000000-0000-4000-8000-000000000001',true); UPDATE public.class_teachers SET status='active',version=version+1 WHERE class_id='b8000000-0000-4000-8000-000000000001' AND membership_id='a3000000-0000-4000-8000-000000000003' AND status='revoked'; COMMIT;");
+}
+console.log('PASS APS assignment access revoked immediately by teaching or membership revocation');

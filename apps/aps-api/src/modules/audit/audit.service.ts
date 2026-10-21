@@ -1,22 +1,41 @@
-import { Injectable } from '@nestjs/common';
-import { TransactionClient } from '../../database/transaction/transaction.service';
+import { Injectable } from "@nestjs/common";
+import { TransactionClient } from "../../database/transaction/transaction.service";
+import { Prisma } from "@prisma/client";
 
 export interface AuditRecord {
-  actorId: string;
+  actorUserId: string;
+  actorMembershipId: string;
+  schoolId: string;
   action: string;
-  entity: string;
-  recordId: string;
+  entityType: string;
+  entityId: string;
   beforeValue?: unknown;
   afterValue?: unknown;
-  timestamp: Date;
   requestId: string;
 }
 
 @Injectable()
 export class AuditService {
-  async record(_tx: TransactionClient, _record: AuditRecord): Promise<void> {
-    void _tx;
-    void _record;
-    // Domain API repositories create concrete audit tables after ownership is ratified.
+  async record(tx: TransactionClient, record: AuditRecord): Promise<void> {
+    // INSERT-only runtime privilege: do not request a RETURNING audit row.
+    await tx.auditEvent.createMany({
+      data: [
+        {
+          ...record,
+          beforeValue:
+            record.beforeValue === undefined
+              ? undefined
+              : (JSON.parse(
+                  JSON.stringify(record.beforeValue),
+                ) as Prisma.InputJsonValue),
+          afterValue:
+            record.afterValue === undefined
+              ? undefined
+              : (JSON.parse(
+                  JSON.stringify(record.afterValue),
+                ) as Prisma.InputJsonValue),
+        },
+      ],
+    });
   }
 }

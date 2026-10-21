@@ -16,6 +16,7 @@ import {
 import styles from "./teacher-workspace.module.css"
 import { useWorkspace } from "@/features/workspace/workspace-provider"
 import { AuthorizedClasses } from "@/features/classes/authorized-classes"
+import { LiveAssignments } from "@/features/assignments/live-assignments"
 export function TeacherPageContent({
   view,
   resourceId,
@@ -26,6 +27,19 @@ export function TeacherPageContent({
   title: string
 }) {
   const { data: workspace } = useWorkspace()
+  if (
+    workspace.mode === "live" &&
+    ["assignments", "assignment", "new-assignment"].includes(view)
+  )
+    return (
+      <div className={styles.page}>
+        <LiveAssignments
+          key={`${workspace.schoolId}:${workspace.membershipId}:${view}:${resourceId ?? ""}`}
+          resourceId={view === "assignment" ? resourceId : undefined}
+          create={view === "new-assignment"}
+        />
+      </div>
+    )
   if (workspace.mode === "live" && (view === "classes" || view === "class"))
     return (
       <div className={styles.page}>

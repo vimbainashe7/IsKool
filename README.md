@@ -4,6 +4,8 @@ One school platform: Next.js frontend, APS academic API and SAMS administration 
 
 ## Windows quick start
 
+Teacher assignment publication testing: [workflow and acceptance commands](docs/acceptance/VIM-53-ASSIGNMENTS.md). Use the connected launcher below; frontend-only startup does not verify the APIs.
+
 All root commands below run in **C:\Users\User\Documents\aiDo\IsKool_unified**. `frontend_base` is a subdirectory, not a separate backend checkout. Never run backend npm scripts there.
 
 ### First-time setup

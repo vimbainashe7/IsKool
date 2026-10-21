@@ -6,6 +6,7 @@ import { useWorkspace } from "@/features/workspace/workspace-provider"
 import { TeacherSectionCard } from "@/features/teacher-workspace/teacher-components"
 import studentStyles from "@/features/student-dashboard/student-dashboard.module.css"
 import teacherStyles from "@/features/teacher-workspace/teacher-workspace.module.css"
+import { AssignmentList } from "@/features/assignments/live-assignments"
 
 export function DashboardClasses({ role }: { role: "student" | "teacher" }) {
   const { data } = useWorkspace()
@@ -154,16 +155,18 @@ export function LiveStudentDashboardContent() {
 }
 
 export function LiveTeacherDashboardContent() {
+  const { data } = useWorkspace()
   return (
     <div className={teacherStyles.lower}>
       <DashboardClasses role="teacher" />
+      <AssignmentList key={`${data.schoolId}:${data.membershipId}`} compact />
       <TeacherSectionCard title="Today's Plan">
         <p className={teacherStyles.meta}>Timetable is not available yet.</p>
       </TeacherSectionCard>
       <TeacherSectionCard title="Submission review">
         <p>Submission review is not available yet.</p>
         <p className={teacherStyles.meta}>
-          Assignments, grading tasks, teaching materials and notifications are
+          Grading tasks, teaching materials and notifications are
           not available yet.
         </p>
       </TeacherSectionCard>

@@ -10,7 +10,7 @@ const descriptions: Partial<Record<WorkspaceViewKey, string>> = {
   assignments:
     "Create, organize and review coursework for your assigned classes.",
   "new-assignment":
-    "Prepare the details, rules and attachments, then review your assignment before publishing.",
+    "Choose a class and term, write the instructions and deadline, then save a draft before publishing.",
   assignment: "Review and update assignment details for your class.",
   materials:
     "Upload, organize and publish learning resources for your classes.",

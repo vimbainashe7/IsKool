@@ -148,7 +148,7 @@ export async function loadWorkspace(
               "Student and enrollment totals could not be loaded. Retry loading records.",
             ]
           : []),
-        "Assignments, grades, timetable and broader staff/account administration are not available yet.",
+        "Student assignment access, submissions, grades, timetable and broader staff/account administration are not available yet.",
       ],
     })
   }
