@@ -7,6 +7,7 @@ import { StudentCalendarCard } from "./student-calendar"
 import { UpcomingTasksCard, StudentScheduleStrip } from "./upcoming-tasks"
 import { RecentFeedback } from "./student-feedback"
 import styles from "./student-dashboard.module.css"
+import { LiveStudentDashboardContent } from "@/features/classes/dashboard-classes"
 export function StudentDashboard({ studentName }: { studentName: string }) {
   const { data: w } = useWorkspace()
   const model = studentDashboardModel(w)
@@ -20,13 +21,22 @@ export function StudentDashboard({ studentName }: { studentName: string }) {
     <div className={styles.canvas}>
       <div className={styles.dashboard}>
         <StudentWelcomeBanner firstName={firstName} subtitle={subtitle} />
-        <StudentCourseGrid model={model} />
-        <StudentScheduleStrip model={model} warnings={w.warnings} />
-        <RecentFeedback model={model} />
-        <aside className={styles.rail} aria-label="Schedule and upcoming work">
-          <StudentCalendarCard model={model} />
-          <UpcomingTasksCard model={model} asOf={w.asOf} />
-        </aside>
+        {w.mode === "live" ? (
+          <LiveStudentDashboardContent />
+        ) : (
+          <>
+            <StudentCourseGrid model={model} />
+            <StudentScheduleStrip model={model} warnings={w.warnings} />
+            <RecentFeedback model={model} />
+            <aside
+              className={styles.rail}
+              aria-label="Schedule and upcoming work"
+            >
+              <StudentCalendarCard model={model} />
+              <UpcomingTasksCard model={model} asOf={w.asOf} />
+            </aside>
+          </>
+        )}
       </div>
     </div>
   )

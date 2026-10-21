@@ -37,7 +37,9 @@ export async function WorkspacePage({
     )
   let data
   try {
-    data = await loadWorkspace(session.context)
+    data = await loadWorkspace(session.context, {
+      includeAcademic: view === "dashboard",
+    })
   } catch {
     return (
       <PageShell title={title}>

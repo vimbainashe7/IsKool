@@ -112,6 +112,7 @@ export function teacherModel(w: Workspace) {
     return a?.dueAt && Date.parse(s.submittedAt) > Date.parse(a.dueAt)
   })
   return {
+    academicWorkAvailable: w.mode !== "live",
     classes,
     assignments,
     submissions,
