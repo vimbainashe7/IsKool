@@ -24,7 +24,7 @@ async function signIn(page: Page, role: "Admin" | "Teacher" | "Student") {
   await page.goto("/sign-in")
   await page.getByRole("button", { name: role, exact: true }).click()
   try {
-    await page.getByLabel("Development seed password").fill(password)
+    await page.getByLabel("Password", { exact: true }).fill(password)
   } catch {
     throw new Error("Could not enter private development credential.")
   }

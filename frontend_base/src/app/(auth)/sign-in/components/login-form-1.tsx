@@ -34,18 +34,26 @@ const loginFormSchema = z.object({
 type LoginFormValues = z.infer<typeof loginFormSchema>
 type SchoolChoice = { id: string; name: string; roles: string[] }
 
+export type DevelopmentAccountSelection = {
+  role: "Student" | "Teacher" | "Admin"
+}
+
 export function LoginForm1({
   className,
   developmentAccounts = false,
+  accountSelection,
+  onBusyChange,
   ...props
-}: React.ComponentProps<"div"> & { developmentAccounts?: boolean }) {
+}: React.ComponentProps<"div"> & {
+  developmentAccounts?: boolean
+  accountSelection?: DevelopmentAccountSelection
+  onBusyChange?: (busy: boolean) => void
+}) {
   const searchParams = useSearchParams()
   const [message, setMessage] = React.useState<string | null>(null)
   const [schools, setSchools] = React.useState<SchoolChoice[]>([])
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [canDemo, setCanDemo] = React.useState(false)
-  const [devPassword, setDevPassword] = React.useState("")
-  const [selectedAccount, setSelectedAccount] = React.useState<string | null>(null)
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
@@ -55,11 +63,27 @@ export function LoginForm1({
   })
 
   React.useEffect(() => {
-    setCanDemo(process.env.NEXT_PUBLIC_ISKOOL_DEMO === "true" && !process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NODE_ENV !== "production")
+    setCanDemo(
+      process.env.NEXT_PUBLIC_ISKOOL_DEMO === "true" &&
+        !process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        process.env.NODE_ENV !== "production"
+    )
   }, [])
+
+  React.useEffect(() => {
+    if (!developmentAccounts || !accountSelection) return
+    setSchools([])
+    setMessage(null)
+    form.setValue(
+      "email",
+      `${accountSelection.role.toLowerCase()}.alpha@example.test`,
+      { shouldDirty: true, shouldValidate: true }
+    )
+  }, [accountSelection, developmentAccounts, form])
 
   async function authenticate(values: LoginFormValues, schoolId?: string) {
     setIsSubmitting(true)
+    onBusyChange?.(true)
     setMessage(null)
 
     try {
@@ -68,9 +92,11 @@ export function LoginForm1({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ ...values, schoolId }),
       })
-      const body = (await response.json().catch(() => null)) as
-        | { error?: string; code?: string; schools?: SchoolChoice[] }
-        | null
+      const body = (await response.json().catch(() => null)) as {
+        error?: string
+        code?: string
+        schools?: SchoolChoice[]
+      } | null
 
       if (!response.ok) {
         if (response.status === 409 && body?.schools?.length) {
@@ -79,7 +105,7 @@ export function LoginForm1({
         setMessage(
           response.status === 409
             ? "Choose the school you want to open."
-            : body?.error ?? "Sign in failed. Check your email and password."
+            : (body?.error ?? "Sign in failed. Check your email and password.")
         )
         return
       }
@@ -89,6 +115,7 @@ export function LoginForm1({
       setMessage("Sign in is currently unavailable. Try again shortly.")
     } finally {
       setIsSubmitting(false)
+      onBusyChange?.(false)
     }
   }
 
@@ -98,7 +125,7 @@ export function LoginForm1({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="border-0 bg-transparent shadow-none md:bg-white/0">
+      <Card className="gap-4 py-4 border-0 bg-transparent shadow-none md:bg-white/0">
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Welcome back</CardTitle>
           <CardDescription>
@@ -108,37 +135,8 @@ export function LoginForm1({
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
-              <div className="grid gap-6">
-                <div className="grid gap-4">
-                  {developmentAccounts && (
-                    <fieldset className="grid gap-3 rounded-xl border border-iskool-cream bg-iskool-cream/45 p-3" disabled={isSubmitting}>
-                      <legend className="px-1 text-sm font-medium">Development accounts</legend>
-                      <p id="dev-account-help" className="text-xs text-muted-foreground">
-                        Live local testing. Find the demo password in Passwords.txt at the repository root. Enter it once here, then select an account to fill the form.
-                      </p>
-                      <label htmlFor="dev-seed-password" className="text-sm font-medium">Development seed password</label>
-                      <Input id="dev-seed-password" type="password" autoComplete="off" aria-describedby="dev-account-help" value={devPassword}
-                        onChange={(event) => {
-                          setDevPassword(event.target.value)
-                          form.setValue("password", event.target.value, { shouldDirty: true, shouldValidate: true })
-                        }} />
-                      <div className="grid grid-cols-3 gap-2" role="group" aria-label="Select development account">
-                        {["Student", "Teacher", "Admin"].map((role) => (
-                          <Button key={role} type="button" size="sm" variant={selectedAccount === role ? "default" : "outline"}
-                            aria-pressed={selectedAccount === role}
-                            onClick={() => {
-                              setSelectedAccount(role)
-                              setSchools([])
-                              setMessage(null)
-                              form.setValue("email", `${role.toLowerCase()}.alpha@example.test`, { shouldDirty: true, shouldValidate: true })
-                              if (devPassword) form.setValue("password", devPassword, { shouldDirty: true, shouldValidate: true })
-                            }}>
-                            {role}
-                          </Button>
-                        ))}
-                      </div>
-                    </fieldset>
-                  )}
+              <div className="grid gap-3">
+                <div className="grid gap-3">
                   <FormField
                     control={form.control}
                     name="email"
@@ -146,7 +144,11 @@ export function LoginForm1({
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="you@school.example" {...field} />
+                          <Input
+                            type="email"
+                            placeholder="you@school.example"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -167,14 +169,21 @@ export function LoginForm1({
                           </a>
                         </div>
                         <FormControl>
-                          <Input type="password" autoComplete="current-password" {...field} />
+                          <Input
+                            type="password"
+                            autoComplete="current-password"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   {message && (
-                    <p role="alert" className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    <p
+                      role="alert"
+                      className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                    >
                       {message}
                     </p>
                   )}
@@ -186,19 +195,27 @@ export function LoginForm1({
                           type="button"
                           variant="outline"
                           disabled={isSubmitting}
-                          onClick={() => void authenticate(form.getValues(), school.id)}
+                          onClick={() =>
+                            void authenticate(form.getValues(), school.id)
+                          }
                         >
                           {school.name}
                         </Button>
                       ))}
                     </div>
                   )}
-                  <Button type="submit" className="h-11 w-full cursor-pointer rounded-xl" disabled={isSubmitting}>
+                  <Button
+                    type="submit"
+                    className="h-11 w-full cursor-pointer rounded-xl"
+                    disabled={isSubmitting}
+                  >
                     {isSubmitting ? "Signing in..." : "Sign in"}
                   </Button>
                   {canDemo && (
                     <div className="grid gap-2 rounded-xl border border-iskool-cream bg-iskool-cream/45 p-3">
-                      <p className="text-xs font-medium">Local frontend preview</p>
+                      <p className="text-xs font-medium">
+                        Local frontend preview
+                      </p>
                       <div className="grid grid-cols-3 gap-2">
                         <Button asChild variant="outline" size="sm">
                           <a href="/api/dev/demo-login?role=student">Student</a>
@@ -213,7 +230,8 @@ export function LoginForm1({
                     </div>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    Roles are loaded from school memberships after sign in; this form cannot self-assign access.
+                    Roles are loaded from school memberships after sign in; this
+                    form cannot self-assign access.
                   </p>
                 </div>
                 <div className="text-center text-sm">

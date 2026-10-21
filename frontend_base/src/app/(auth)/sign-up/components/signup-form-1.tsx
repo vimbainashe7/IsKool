@@ -91,7 +91,7 @@ export function SignupForm1({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="overflow-hidden">
+      <Card className="gap-4 overflow-hidden py-4">
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Create Account</CardTitle>
           <CardDescription>
@@ -101,8 +101,8 @@ export function SignupForm1({
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
-              <div className="grid gap-6">
-                <div className="grid gap-4">
+              <div className="grid gap-3">
+                <div className="grid gap-3">
                   <div className="grid grid-cols-2 gap-3">
                     <FormField
                       control={form.control}

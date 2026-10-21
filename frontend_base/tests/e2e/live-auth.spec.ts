@@ -114,7 +114,7 @@ test.describe("live IsKool authentication", () => {
     await expect(page).toHaveURL(/\/sign-in$/)
     const before = await page.request.get("/api/workspace")
     expect(before.status()).toBe(401)
-    await page.getByLabel("Development seed password").fill("incorrect-fixture-password")
+    await page.getByLabel("Password", { exact: true }).fill("incorrect-fixture-password")
     await page.getByRole("button", { name: "Sign in", exact: true }).click()
     await expect(page.getByRole("alert").filter({ hasText: "Invalid email or password" })).toBeVisible()
 
@@ -159,7 +159,7 @@ async function signIn(page: Page, email: string, password: string) {
   await page.getByRole("button", { name: role[0].toUpperCase() + role.slice(1), exact: true }).click()
   await expect(page.getByRole("textbox", { name: "Email" })).toHaveValue(email)
   try {
-    await page.getByLabel("Development seed password").fill(password)
+    await page.getByLabel("Password", { exact: true }).fill(password)
   } catch {
     throw new Error("Could not enter the private development fixture password.")
   }
