@@ -4,6 +4,10 @@ Updated: 2026-10-21 (Africa/Harare).
 
 ## Current delivery
 
+PR #10 was human accepted and explicitly approved on 2026-10-21, then merged as `2a68d1f6ab517362be47022fe4111587f66f0e2e` after all seven applicable checks passed at final head `c9b9603c697b19c88a8b6c6954d19b1477465e2d`. [Owner approval evidence](https://github.com/vimbainashe7/IsKool/pull/10#issuecomment-6315824237). The template job was excluded by its path filter. Compact sign-in is integrated; production release is separate.
+
+Current increment: VIM-53 Teacher assignment draft/edit/publication/archival on `feat/vim-53-assignment-publication`, based on merged PR #10. APS assignment model, controller/DTO/service/repository, atomic audit writes and Teacher UI/dashboard are implemented locally. Forward migration `20261021122710_aps_assignment_publication.sql` adds tenant/context FKs, forced author/teaching RLS, least privileges and lifecycle/version controls. Fresh disposable replay and restricted-role checks passed; Prisma drift matches. Local policy/service tests: 6 passed; frontend contracts: 3 passed. Expanded SQL, full checks, live persistence demonstration, CI and human acceptance remain pending. No hosted migration has yet been applied. VIM-53 status/comment writes failed because the Linear connector disconnected; no transition is claimed. Student feed/submissions/review remain subsequent increments and VIM-53 is not Done.
+
 Owner accepted the revised Settings workflow and explicitly approved merging PR #6 followed by PR #7 on 2026-10-20. Acceptance evidence is recorded on both PRs. VIM-70's three-role human acceptance remains closed.
 
 PR #6 merged into the configured default branch `frontend/workspace-redesigns-2026-10-13` as `81c7c155a05a3fa2d8f8d3b2e75cb36b43314c44`. Its head `81b42e3` had eight passing checks and no unresolved review discussions. Student/guardian/enrollment administration and real Admin counts are implemented, integrated and human accepted. Production release is separate.
