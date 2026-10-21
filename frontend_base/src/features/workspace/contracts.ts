@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { classContextSchema } from "@/features/classes/contracts"
 export const id = z.string().min(1).max(100)
 export const classSchema = z.object({
   id,
@@ -89,6 +90,7 @@ export const studentSummarySchema = z.object({
   classes: z.number().int().nonnegative(),
 })
 export const workspaceSchema = z.object({
+  academicContext: classContextSchema.nullable().optional(),
   studentSummary: studentSummarySchema.nullable().optional(),
   asOf: z.string(),
   mode: z.enum(["demo", "live"]),

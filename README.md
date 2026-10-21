@@ -214,3 +214,11 @@ Live tests require the live APIs and approved fixture identities. Demo workflow 
 [Local database configuration](docs/architecture/LOCAL_DEVELOPMENT.md) � [M2 acceptance](docs/acceptance/M2-IDENTITY-AUTHORIZATION.md) � [Repository topology](docs/adr/0010-single-repository-monorepo.md) � [Frontend contracts](frontend_base/docs/frontend/BACKEND_CONTRACTS.md).
 
 Canonical physical migrations live in `supabase/migrations`; Prisma is the typed query mapping in `database/prisma/schema.prisma`. APS accesses SAMS-owned resources through authenticated SAMS APIs. Keep JWT guards, tenant isolation, RLS and least-privilege database roles enabled. Destructive database resets are explicit operations and never part of startup.
+
+### Verify live dashboard updates (VIM-62)
+
+Start from the repository root with `npm run dev:iskool`; read the existing local demo credential with `notepad .\Passwords.txt`. No reseed or password rotation is needed. Student and Teacher dashboards show current authorized classes and academic periods; Teachers also see active student counts per class. Use **View all** for the full paginated list. Admin student/enrollment totals use the school registry.
+
+Create and enroll a student as Admin, navigate to the dashboard and reload. Sign in as the assigned Teacher and reload: that class count must increase. Withdraw the enrollment through its student record and reload both dashboards: enrolled counts must decrease, while the student record remains. Unsupported assignments, grading, resources, notifications and timetable are explicitly unavailable; an API failure must not display a fabricated zero.
+
+Automated real-development acceptance: `npm run smoke:dashboards` (one browser worker). Requires a linked Student and an assigned Teacher class in a current term, as established by the VIM-52 acceptance workflow. It creates one editable student, enrolls and withdraws it, and retains its history. Full walkthrough: `docs/acceptance/VIM-62-DASHBOARDS.md`.

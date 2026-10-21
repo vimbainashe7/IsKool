@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server"
 import { isIsKoolAuthConfigured } from "@/lib/iskool-auth/shared"
 import { canUseDemoSession } from "@/dev/demo-session"
 import { readDemoWorkspace } from "@/dev/workspace-store"
+import { parseClassContext } from "@/features/classes/contracts"
 import {
   studentSummarySchema,
   workspaceSchema,
@@ -56,13 +57,46 @@ const materialRow = z.object({
 })
 // These are validated read projections, not a duplicate database model. Generated DB types are absent.
 export async function loadWorkspace(
-  context: IsKoolContext
+  context: IsKoolContext,
+  options: { includeAcademic?: boolean } = {}
 ): Promise<Workspace> {
   if (canUseDemoSession()) return readDemoWorkspace(context)
   const client = await createClient()
   if (!context.membershipId)
     throw new Error("Your school workspace is not available.")
   if (isIsKoolAuthConfigured()) {
+    let academicContext = null
+    if (
+      options.includeAcademic &&
+      (context.activeRole === "student" || context.activeRole === "teacher")
+    ) {
+      const token = (await cookies()).get(iskoolAuthCookies.apsAccess)?.value
+      if (!token) throw new Error("No academic session")
+      const url = `${getIsKoolApiUrls().aps}/academic-context?role=${context.activeRole}&limit=3`
+      const requestOptions = {
+        cache: "no-store" as const,
+        signal: AbortSignal.timeout(
+          process.env.NODE_ENV === "development" ? 30_000 : 10_000
+        ),
+        headers: {
+          authorization: `Bearer ${token}`,
+          "x-request-id": randomUUID(),
+        },
+      }
+      let response = await fetch(url, requestOptions)
+      // Retry only a failed idempotent read, sharing the original deadline.
+      // Authorization failures and malformed successful responses are never retried.
+      if (response.status >= 500 && !requestOptions.signal.aborted)
+        response = await fetch(url, requestOptions)
+      if (!response.ok)
+        throw new Error("Your classes could not be loaded. Please retry.")
+      academicContext = parseClassContext(
+        await response.json(),
+        context.school.id,
+        context.membershipId,
+        context.activeRole
+      )
+    }
     let studentSummary = null
     if (context.activeRole === "admin") {
       try {
@@ -88,6 +122,7 @@ export async function loadWorkspace(
       }
     }
     return workspaceSchema.parse({
+      academicContext,
       studentSummary,
       asOf: new Date().toISOString(),
       mode: "live",

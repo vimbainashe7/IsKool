@@ -21,6 +21,7 @@ import {
   TeacherRow,
 } from "./teacher-components"
 import styles from "./teacher-workspace.module.css"
+import { LiveTeacherDashboardContent } from "@/features/classes/dashboard-classes"
 
 const links = [
   {
@@ -88,9 +89,11 @@ export function TeacherGreetingCard({
         <p>Here’s what needs your attention today.</p>
         <div className={styles.heroNotice}>
           <FileCheck2 size={16} aria-hidden="true" />
-          {model.awaiting.length
-            ? `${model.awaiting.length} submissions are waiting for review.`
-            : "You're caught up. No submissions are waiting for review."}
+          {!model.academicWorkAvailable
+            ? "Your current teaching assignments are shown below."
+            : model.awaiting.length
+              ? `${model.awaiting.length} submissions are waiting for review.`
+              : "You're caught up. No submissions are waiting for review."}
         </div>
       </div>
       <div className={styles.graphic} aria-hidden="true">
@@ -271,16 +274,20 @@ export function TeacherDashboard({
     <div className={styles.dashboard}>
       <TeacherGreetingCard name={name} model={model} asOf={w.asOf} />
       <TeacherQuickLinks capabilities={capabilities} />
-      <div className={styles.lower}>
-        <div className={styles.planColumn}>
-          <TodayPlanCard model={model} />
-          {hasCapability(capabilities, "submissions.review") && (
-            <SubmissionAttentionCard model={model} />
-          )}
+      {w.mode === "live" ? (
+        <LiveTeacherDashboardContent />
+      ) : (
+        <div className={styles.lower}>
+          <div className={styles.planColumn}>
+            <TodayPlanCard model={model} />
+            {hasCapability(capabilities, "submissions.review") && (
+              <SubmissionAttentionCard model={model} />
+            )}
+          </div>
+          <RecentDocumentsCard model={model} />
+          <ClassProgressCard model={model} />
         </div>
-        <RecentDocumentsCard model={model} />
-        <ClassProgressCard model={model} />
-      </div>
+      )}
     </div>
   )
 }

@@ -6,8 +6,11 @@ vi.mock("next/headers", () => ({
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => null }))
 vi.mock("@/lib/iskool-auth/shared", () => ({
   isIsKoolAuthConfigured: () => true,
-  getIsKoolApiUrls: () => ({ sams: "http://127.0.0.1:3002/api/v1" }),
-  iskoolAuthCookies: { samsAccess: "sams" },
+  getIsKoolApiUrls: () => ({
+    sams: "http://127.0.0.1:3002/api/v1",
+    aps: "http://127.0.0.1:3001/api/v1",
+  }),
+  iskoolAuthCookies: { samsAccess: "sams", apsAccess: "aps" },
 }))
 vi.mock("@/dev/demo-session", () => ({ canUseDemoSession: () => false }))
 import { loadWorkspace } from "@/features/workspace/server"
@@ -39,6 +42,102 @@ it("loads validated SAMS aggregates without treating students as accounts", asyn
     "http://127.0.0.1:3002/api/v1/student-administration/summary",
     expect.objectContaining({ cache: "no-store" })
   )
+})
+const academicPrincipal: IsKoolContext = {
+  ...context,
+  school: { id: "a1000000-0000-4000-8000-000000000001", name: "School" },
+  membershipId: "a3000000-0000-4000-8000-000000000004",
+  roles: ["student"],
+  activeRole: "student",
+}
+const academic = {
+  version: 1,
+  schoolId: academicPrincipal.school.id,
+  membershipId: academicPrincipal.membershipId,
+  role: "student",
+  asOf: "2026-10-21T08:00:00Z",
+  student: null,
+  classes: [],
+  totalClasses: 0,
+  nextCursor: null,
+}
+it("loads a bounded authorized dashboard projection through APS, including genuine zero", async () => {
+  const fetcher = vi.fn().mockResolvedValue(Response.json(academic))
+  vi.stubGlobal("fetch", fetcher)
+  const result = await loadWorkspace(academicPrincipal, {
+    includeAcademic: true,
+  })
+  expect(result.academicContext).toEqual(academic)
+  expect(fetcher).toHaveBeenCalledWith(
+    "http://127.0.0.1:3001/api/v1/academic-context?role=student&limit=3",
+    expect.objectContaining({
+      cache: "no-store",
+      headers: expect.objectContaining({
+        authorization: "Bearer unit-session",
+      }),
+    })
+  )
+  expect(fetcher).toHaveBeenCalledTimes(1)
+})
+it("fails closed on failed, malformed or foreign dashboard responses instead of returning zero", async () => {
+  for (const response of [
+    Response.json({}, { status: 503 }),
+    Response.json({}),
+    Response.json({
+      ...academic,
+      schoolId: "a1000000-0000-4000-8000-000000000002",
+    }),
+  ]) {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response))
+    await expect(
+      loadWorkspace(academicPrincipal, { includeAcademic: true })
+    ).rejects.toThrow()
+  }
+})
+it("does not call student projections when an Admin dashboard requests academic data", async () => {
+  const totals = {
+    students: 0,
+    activeStudents: 0,
+    enrolledStudents: 0,
+    activeEnrollments: 0,
+    withoutClass: 0,
+    classes: 0,
+  }
+  const fetcher = vi.fn().mockResolvedValue(Response.json(totals))
+  vi.stubGlobal("fetch", fetcher)
+  expect(
+    (await loadWorkspace(context, { includeAcademic: true })).studentSummary
+  ).toEqual(totals)
+  expect(fetcher).toHaveBeenCalledTimes(1)
+})
+it("recovers one transient academic read within the original deadline", async () => {
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce(Response.json({}, { status: 503 }))
+    .mockResolvedValueOnce(Response.json(academic))
+  vi.stubGlobal("fetch", fetcher)
+  expect(
+    (await loadWorkspace(academicPrincipal, { includeAcademic: true }))
+      .academicContext
+  ).toEqual(academic)
+  expect(fetcher).toHaveBeenCalledTimes(2)
+  expect(fetcher.mock.calls[0][1].signal).toBe(fetcher.mock.calls[1][1].signal)
+})
+it("does not retry authorization failures or invalid responses and bounds outage retries", async () => {
+  for (const [status, body, attempts] of [
+    [403, {}, 1],
+    [200, {}, 1],
+    [503, {}, 2],
+  ] as const) {
+    const fetcher = vi
+      .fn()
+      .mockImplementation(async () => Response.json(body, { status }))
+    vi.stubGlobal("fetch", fetcher)
+    await expect(
+      loadWorkspace(academicPrincipal, { includeAcademic: true })
+    ).rejects.toThrow()
+    expect(fetcher).toHaveBeenCalledTimes(attempts)
+  }
 })
 it("keeps failed or malformed summary requests unavailable", async () => {
   for (const response of [

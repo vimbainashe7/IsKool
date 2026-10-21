@@ -18,7 +18,10 @@ export async function GET() {
       { status: 401, headers }
     )
   try {
-    return NextResponse.json(await loadWorkspace(session.context), { headers })
+    return NextResponse.json(
+      await loadWorkspace(session.context, { includeAcademic: true }),
+      { headers }
+    )
   } catch {
     return NextResponse.json(
       { error: "Your workspace could not be loaded. Try again." },
