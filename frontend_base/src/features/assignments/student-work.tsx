@@ -75,7 +75,7 @@ function StudentAssignments({ compact }: { compact: boolean }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>
+        <CardTitle role="heading" aria-level={2}>
           {compact ? "My Assignments" : "Published assignments"}
         </CardTitle>
       </CardHeader>
@@ -249,7 +249,7 @@ function StudentAnswer({ id }: { id: string }) {
         <>
           <Card>
             <CardHeader>
-              <CardTitle className="break-words">
+              <CardTitle role="heading" aria-level={2} className="break-words">
                 {detail.assignment.title}
               </CardTitle>
             </CardHeader>
@@ -271,7 +271,9 @@ function StudentAnswer({ id }: { id: string }) {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Your answer</CardTitle>
+              <CardTitle role="heading" aria-level={2}>
+                Your answer
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <form className="space-y-3" onSubmit={submit}>
@@ -305,7 +307,9 @@ function StudentAnswer({ id }: { id: string }) {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Submission history</CardTitle>
+              <CardTitle role="heading" aria-level={2}>
+                Submission history
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {detail.submissions.length === 0 ? (

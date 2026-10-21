@@ -64,7 +64,9 @@ it("shows authoritative Student classes/periods and total without inventing cour
   expect(screen.getByText("12 enrolled classes")).toBeVisible()
   expect(screen.getByText("Academic year 2026")).toBeVisible()
   expect(screen.getByText(/Current Term/)).toBeVisible()
-  expect(screen.getByText("Assignments are not available yet.")).toBeVisible()
+  expect(
+    screen.getByRole("heading", { name: "My Assignments", exact: true })
+  ).toBeVisible()
   expect(
     screen.queryByText(
       /caught up|0 published|0 assignments|No assignment deadlines/i
