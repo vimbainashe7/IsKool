@@ -155,10 +155,11 @@ export function LiveStudentDashboardContent() {
 }
 
 export function LiveTeacherDashboardContent() {
+  const { data } = useWorkspace()
   return (
     <div className={teacherStyles.lower}>
       <DashboardClasses role="teacher" />
-      <AssignmentList compact />
+      <AssignmentList key={`${data.schoolId}:${data.membershipId}`} compact />
       <TeacherSectionCard title="Today's Plan">
         <p className={teacherStyles.meta}>Timetable is not available yet.</p>
       </TeacherSectionCard>

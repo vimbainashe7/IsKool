@@ -70,7 +70,7 @@ export class AssignmentService {
       );
     return schoolClass;
   }
-  private async owned(a: SamsActor, id: string) {
+  private async owned(a: SamsActor, id: string, dueAt?: string) {
     requireTeacher(a.principal);
     const row = await this.repository.run(a, (tx) =>
       this.repository.find(tx, a, id),
@@ -83,7 +83,7 @@ export class AssignmentService {
       a,
       row.classId,
       row.academicTermId,
-      row.dueAt.toISOString(),
+      dueAt ?? row.dueAt.toISOString(),
     );
     return row;
   }
@@ -115,15 +115,15 @@ export class AssignmentService {
       );
   }
   async update(a: SamsActor, id: string, d: UpdateAssignmentDto) {
+    requireTeacher(a.principal);
     validateDraft(d);
-    const row = await this.owned(a, id);
+    const row = await this.owned(a, id, d.dueAt);
     this.version(row, d.version);
     if (row.status !== "draft")
       throw new BusinessRuleError(
         "ASSIGNMENT_NOT_DRAFT",
         "Only drafts can be edited.",
       );
-    await this.context(a, row.classId, row.academicTermId, d.dueAt);
     return this.repository.run(a, async (tx) => {
       const after = await this.repository.update(tx, a, row, {
         title: d.title.trim(),

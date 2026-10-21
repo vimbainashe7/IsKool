@@ -149,10 +149,11 @@ test.describe("live Teacher assignment publication", () => {
     expect(published.publishedAt).toBeTruthy()
     expect(published.version).toBe(3)
     await page.goto("/teacher/dashboard")
-    await expect(page.getByLabel("published assignments")).toContainText(
-      String(before.summary.published + 1),
-      { timeout: 90000 }
-    )
+    await expect(
+      page
+        .getByLabel("published assignments")
+        .getByText(String(before.summary.published + 1), { exact: true })
+    ).toBeVisible({ timeout: 90000 })
     const invalid = await page.request.post("/api/assignments", {
       headers: { origin },
       data: {
@@ -186,6 +187,19 @@ test.describe("live Teacher assignment publication", () => {
       path: info.outputPath("teacher-assignment-archived.png"),
       fullPage: true,
     })
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth + 1
+        )
+      )
+      .toBe(true)
+    await page.screenshot({
+      path: info.outputPath("teacher-assignment-mobile.png"),
+      fullPage: true,
+    })
+    await page.setViewportSize({ width: 1280, height: 720 })
     await page.getByRole("button", { name: "Profile menu" }).click()
     await page.getByRole("button", { name: "Sign out", exact: true }).click()
     await expect(page).toHaveURL(/\/sign-in$/)

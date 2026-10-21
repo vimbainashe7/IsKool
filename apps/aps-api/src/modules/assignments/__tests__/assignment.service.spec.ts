@@ -4,6 +4,53 @@ import {
   ResourceNotFoundError,
 } from "../../../common/errors/application-error";
 describe("Assignment application boundary", () => {
+  it("validates an edit once through SAMS and audits through the write transaction", async () => {
+    const row = {
+      ...input,
+      id: "assignment",
+      schoolId: "school",
+      authorMembershipId: "teacher",
+      academicYearId: "year",
+      version: 1,
+      status: "draft",
+      dueAt: new Date(input.dueAt),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      publishedAt: null,
+    };
+    const tx = {},
+      sams = {
+        getAuthorizedContext: jest
+          .fn()
+          .mockResolvedValue({
+            classes: [
+              {
+                id: "class",
+                academicYear: { id: "year" },
+                terms: [
+                  { id: "term", startsOn: "2026-01-01", endsOn: "2026-12-31" },
+                ],
+              },
+            ],
+          }),
+      };
+    const repository = {
+      run: jest.fn((_a, work) => work(tx)),
+      find: jest.fn().mockResolvedValue(row),
+      update: jest.fn().mockResolvedValue({ ...row, version: 2 }),
+      record: jest.fn().mockResolvedValue(undefined),
+    };
+    const service = new AssignmentService(sams as never, repository as never);
+    await service.update(actor as never, row.id, { ...input, version: 1 });
+    expect(sams.getAuthorizedContext).toHaveBeenCalledTimes(1);
+    expect(repository.record).toHaveBeenCalledWith(
+      tx,
+      actor,
+      "assignment.updated",
+      expect.objectContaining({ version: 2 }),
+      row,
+    );
+  });
   const actor = {
     principal: {
       scope: "aps",
