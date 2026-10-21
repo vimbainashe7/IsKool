@@ -8,6 +8,7 @@ import { AssignmentRepository } from "./assignment.repository";
 import { StudentWorkController } from "./student-work.controller";
 import { StudentWorkService } from "./student-work.service";
 import { StudentWorkRepository } from "./student-work.repository";
+import { SubmissionBudgetGuard } from "./submission-budget.guard";
 @Module({
   imports: [AuthModule, AuditModule, SamsClientModule],
   controllers: [AssignmentController, StudentWorkController],
@@ -16,6 +17,7 @@ import { StudentWorkRepository } from "./student-work.repository";
     AssignmentRepository,
     StudentWorkService,
     StudentWorkRepository,
+    SubmissionBudgetGuard,
   ],
 })
 export class AssignmentModule {}

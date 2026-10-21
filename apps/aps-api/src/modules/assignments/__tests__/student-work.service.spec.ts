@@ -99,25 +99,21 @@ describe("Student academic ownership boundary", () => {
     };
     const tx = {},
       sams = {
-        getAuthorizedContext: jest
-          .fn()
-          .mockResolvedValue({
-            student: { id: "student" },
-            classes: [{ id: "class" }],
-          }),
+        getAuthorizedContext: jest.fn().mockResolvedValue({
+          student: { id: "student" },
+          classes: [{ id: "class" }],
+        }),
       };
     const records = {
       run: jest.fn((_a, work) => work(tx)),
       consume: jest.fn().mockResolvedValue(true),
       lock: jest.fn().mockResolvedValue(undefined),
       find: jest.fn().mockResolvedValue(task),
-      create: jest
-        .fn()
-        .mockResolvedValue({
-          ...previous,
-          attempt: attempt + 1,
-          text: "New answer",
-        }),
+      create: jest.fn().mockResolvedValue({
+        ...previous,
+        attempt: attempt + 1,
+        text: "New answer",
+      }),
     };
     return {
       records,
@@ -172,5 +168,24 @@ describe("Student academic ownership boundary", () => {
       }),
     ).rejects.toMatchObject({ code: "ATTEMPTS_EXHAUSTED" });
     expect(records.create).not.toHaveBeenCalled();
+  });
+  it("uses the server-reserved request budget without charging the same request twice", async () => {
+    const { service, records } = mutations();
+    await service.submit(
+      actor as never,
+      "assignment",
+      { text: "New answer", expectedAttempt: 0 },
+      { studentId: "student", token: "reserved-token" },
+    );
+    expect(records.consume).not.toHaveBeenCalled();
+    expect(records.create).toHaveBeenCalledWith(
+      expect.anything(),
+      actor,
+      expect.anything(),
+      "student",
+      "reserved-token",
+      "New answer",
+      1,
+    );
   });
 });

@@ -24,6 +24,9 @@ another attempt/audit. Different concurrent answers require the expected prior
 attempt; stale requests fail with 409. Submission and audit writes are atomic.
 Membership disablement, archival and enrollment withdrawal remove access.
 
+The authenticated route budget guard runs before DTO/parameter validation, in
+the documented [Nest request lifecycle](https://docs.nestjs.com/faq/request-lifecycle).
+
 ## Owner test (Windows)
 
 ```powershell

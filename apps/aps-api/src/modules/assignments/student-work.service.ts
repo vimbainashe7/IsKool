@@ -20,6 +20,10 @@ const policy = {
   lateAccepted: true,
   duplicateWindowSeconds: 30,
 } as const;
+export interface SubmissionBudget {
+  studentId: string;
+  token: string;
+}
 @Injectable()
 export class StudentWorkService {
   constructor(
@@ -83,7 +87,7 @@ export class StudentWorkService {
       policy,
     };
   }
-  async submit(a: SamsActor, id: string, d: SubmitWorkDto) {
+  async reserveSubmission(a: SamsActor): Promise<SubmissionBudget> {
     const student = await this.identity(a),
       token = randomUUID();
     if (!(await this.records.consume(a, student.id, token)))
@@ -92,6 +96,15 @@ export class StudentWorkService {
         "You can send up to 10 submission requests per minute. Wait a minute and retry.",
         429,
       );
+    return { studentId: student.id, token };
+  }
+  async submit(
+    a: SamsActor,
+    id: string,
+    d: SubmitWorkDto,
+    reserved?: SubmissionBudget,
+  ) {
+    const budget = reserved ?? (await this.reserveSubmission(a));
     const text = d.text.trim();
     if (!text)
       throw new BusinessRuleError(
@@ -101,7 +114,7 @@ export class StudentWorkService {
     // No network calls while holding a database transaction or student lock.
     const context = await this.get(a, id);
     return this.records.run(a, async (tx) => {
-      await this.records.lock(tx, student.id);
+      await this.records.lock(tx, budget.studentId);
       const row = await this.records.find(tx, a, id);
       if (!row || row.classId !== context.assignment.classId)
         throw new ResourceNotFoundError(
@@ -127,8 +140,8 @@ export class StudentWorkService {
         tx,
         a,
         row,
-        student.id,
-        token,
+        budget.studentId,
+        budget.token,
         text,
         (previous?.attempt ?? 0) + 1,
       );
