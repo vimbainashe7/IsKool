@@ -1,4 +1,4 @@
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 const runtimePassword = randomBytes(24).toString('hex');
@@ -65,3 +65,26 @@ for (const change of ["UPDATE public.class_teachers SET status='revoked',version
   sql("BEGIN; SELECT set_config('iskool.user_id','a2000000-0000-4000-8000-000000000001',true),set_config('iskool.membership_id','a3000000-0000-4000-8000-000000000001',true),set_config('iskool.school_id','a1000000-0000-4000-8000-000000000001',true); UPDATE public.class_teachers SET status='active',version=version+1 WHERE class_id='b8000000-0000-4000-8000-000000000001' AND membership_id='a3000000-0000-4000-8000-000000000003' AND status='revoked'; COMMIT;");
 }
 console.log('PASS APS assignment access revoked immediately by teaching or membership revocation');
+sql(readFileSync('scripts/sql/student-submissions-fixtures.sql','utf8'));
+console.log(sql(readFileSync('scripts/sql/student-submissions-rls.sql','utf8'),'iskool_master_aps_test').stdout.split(/\r?\n/).filter(line=>line.includes('PASS ')).join('\n').trim());
+for(const change of ["UPDATE public.memberships SET status='inactive' WHERE id='a3000000-0000-4000-8000-000000000004'", "UPDATE public.enrollments SET status='withdrawn',ended_at=clock_timestamp(),version=version+1 WHERE id='c5000000-0000-4000-8000-000000000001'"]) {
+  sql(change);
+  sql(`BEGIN; SELECT set_config('iskool.user_id','a2000000-0000-4000-8000-000000000004',true),set_config('iskool.membership_id','a3000000-0000-4000-8000-000000000004',true),set_config('iskool.school_id','a1000000-0000-4000-8000-000000000001',true); DO $$ BEGIN IF EXISTS(SELECT 1 FROM public.assignments) OR EXISTS(SELECT 1 FROM public.submissions) THEN RAISE EXCEPTION 'Withdrawn or disabled Student retained academic access'; END IF; END; $$; ROLLBACK;`,'iskool_master_aps_test');
+  sql("UPDATE public.memberships SET status='active' WHERE id='a3000000-0000-4000-8000-000000000004'");
+}
+console.log('PASS enrollment withdrawal and disabled membership revoke Student assignments and submissions');
+const studentBudgetContext="SELECT set_config('iskool.user_id','c2100000-0000-4000-8000-000000000002',true),set_config('iskool.membership_id','c3100000-0000-4000-8000-000000000002',true),set_config('iskool.school_id','a1000000-0000-4000-8000-000000000001',true);";
+sql(`BEGIN; ${studentBudgetContext} SELECT iskool.consume_submission_request('c4100000-0000-4000-8000-000000000002',pg_catalog.gen_random_uuid()) FROM generate_series(1,9); COMMIT;`,'iskool_master_aps_test');
+function raceBudget() {
+  const common=['-X','-q','-A','-t','--set','ON_ERROR_STOP=1','--username','iskool_master_aps_test','--dbname',connection?.pathname.slice(1)??'postgres'];
+  const args=connection?['-h',connection.hostname,'-p',connection.port||'5432',...common]:['exec','-i','-e',`PGPASSWORD=${runtimePassword}`,container,'psql','-h','127.0.0.1',...common];
+  return new Promise((done,reject)=>{
+    const child=spawn(connection?(process.env.PSQL_PATH??'psql'):'docker',args,{env:{...process.env,PGPASSWORD:runtimePassword},stdio:['pipe','pipe','pipe']});let out='';
+    child.stdout.on('data',chunk=>out+=chunk);child.stderr.resume();child.once('error',()=>reject(Error('Disposable concurrent budget process failed.')));
+    child.once('exit',code=>code===0?done(out.split(/\r?\n/).find(line=>['BUDGET:true','BUDGET:false'].includes(line))):reject(Error('Disposable concurrent budget check failed.')));
+    child.stdin.end(`BEGIN; ${studentBudgetContext} SELECT 'BUDGET:'||iskool.consume_submission_request('c4100000-0000-4000-8000-000000000002',pg_catalog.gen_random_uuid())::text; COMMIT;`);
+  });
+}
+const raced=await Promise.all([raceBudget(),raceBudget()]);
+if(raced.filter(x=>x==='BUDGET:true').length!==1||raced.filter(x=>x==='BUDGET:false').length!==1)throw Error('Concurrent submission budgets bypassed the limit.');
+console.log('PASS two restricted runtime connections competing for the tenth budget admit exactly one request');

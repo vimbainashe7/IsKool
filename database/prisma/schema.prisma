@@ -47,6 +47,7 @@ model User {
 }
 
 model Membership {
+  submissions Submission[]
   id              String           @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
   userId          String           @map("user_id") @db.Uuid
   schoolId        String           @map("school_id") @db.Uuid
@@ -195,6 +196,7 @@ model AuditEvent {
 }
 
 model Student {
+  submissions Submission[]
   id String @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
   schoolId String @map("school_id") @db.Uuid
   admissionNumber String @map("admission_number")
@@ -328,6 +330,7 @@ model ClassTeacher {
 }
 
 model Assignment {
+  submissions Submission[]
   id String @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
   schoolId String @map("school_id") @db.Uuid
   classId String @map("class_id") @db.Uuid
@@ -347,7 +350,29 @@ model Assignment {
   term AcademicTerm @relation(fields:[academicTermId,schoolId,academicYearId],references:[id,schoolId,academicYearId],onDelete:Restrict,onUpdate:NoAction)
   author Membership @relation(fields:[authorMembershipId,schoolId],references:[id,schoolId],onDelete:Restrict,onUpdate:NoAction)
   @@index([schoolId,authorMembershipId,id],map:"assignments_teacher_page_idx")
+  @@unique([id,schoolId],map:"assignments_id_school_unique")
   @@index([schoolId,authorMembershipId,status],map:"assignments_teacher_status_idx")
   @@index([schoolId,classId,academicTermId,status,dueAt,id],map:"assignments_class_feed_idx")
+  @@index([schoolId,status,publishedAt(sort:Desc),id(sort:Desc)],map:"assignments_student_feed_idx")
   @@map("assignments")
+}
+
+model Submission {
+  id String @id @default(dbgenerated("extensions.gen_random_uuid()")) @db.Uuid
+  schoolId String @map("school_id") @db.Uuid
+  assignmentId String @map("assignment_id") @db.Uuid
+  studentId String @map("student_id") @db.Uuid
+  studentMembershipId String @map("student_membership_id") @db.Uuid
+  requestToken String @unique @map("request_token") @db.Uuid
+  text String
+  attempt Int
+  submittedAt DateTime @default(dbgenerated("clock_timestamp()")) @map("submitted_at") @db.Timestamptz(6)
+  status String
+  assignment Assignment @relation(fields:[assignmentId,schoolId],references:[id,schoolId],onDelete:Restrict,onUpdate:NoAction)
+  student Student @relation(fields:[studentId,schoolId],references:[id,schoolId],onDelete:Restrict,onUpdate:NoAction)
+  membership Membership @relation(fields:[studentMembershipId,schoolId],references:[id,schoolId],onDelete:Restrict,onUpdate:NoAction)
+  @@unique([assignmentId,studentId,attempt])
+  @@index([assignmentId,studentId],map:"submissions_assignment_student_idx")
+  @@index([schoolId,studentMembershipId,assignmentId,attempt(sort:Desc)],map:"submissions_student_page_idx")
+  @@map("submissions")
 }

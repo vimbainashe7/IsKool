@@ -7,6 +7,7 @@ import { TeacherSectionCard } from "@/features/teacher-workspace/teacher-compone
 import studentStyles from "@/features/student-dashboard/student-dashboard.module.css"
 import teacherStyles from "@/features/teacher-workspace/teacher-workspace.module.css"
 import { AssignmentList } from "@/features/assignments/live-assignments"
+import { StudentWork } from '@/features/assignments/student-work'
 
 export function DashboardClasses({ role }: { role: "student" | "teacher" }) {
   const { data } = useWorkspace()
@@ -136,10 +137,7 @@ export function LiveStudentDashboardContent() {
       </section>
       <aside className={studentStyles.rail} aria-label="Academic services">
         <section className={studentStyles.tasksArea}>
-          <h2 className="mb-4 font-semibold">Upcoming Tasks</h2>
-          <div className={studentStyles.empty}>
-            Assignments are not available yet.
-          </div>
+          <StudentWork compact />
         </section>
         <Card
           className={`${studentStyles.calendarArea} ${studentStyles.calendarCard}`}

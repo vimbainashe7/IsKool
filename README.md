@@ -6,6 +6,8 @@ One school platform: Next.js frontend, APS academic API and SAMS administration 
 
 Teacher assignment publication testing: [workflow and acceptance commands](docs/acceptance/VIM-53-ASSIGNMENTS.md). Use the connected launcher below; frontend-only startup does not verify the APIs.
 
+Student published assignments and text submissions: [workflow, attempt/late rules and acceptance commands](docs/acceptance/VIM-53-STUDENT-SUBMISSIONS.md). Run `npm run smoke:submissions` only against the approved connected development environment.
+
 All root commands below run in **C:\Users\User\Documents\aiDo\IsKool_unified**. `frontend_base` is a subdirectory, not a separate backend checkout. Never run backend npm scripts there.
 
 ### First-time setup
@@ -152,7 +154,7 @@ The Admin dashboard and Enrollment overview read SAMS student records, active en
 
 To verify updates: Admin → Students → create a student → open its record → select a class and term → enroll as Active → Dashboard, then reload. Students and Enrolled Students must increase. Enrollment shows the same totals and persisted enrollment history; open its student link to change status. Withdrawal decreases active enrollment counts and retains history. Acceptance-test records are actual development database records and can be edited/archived through Students; close open enrollments before archiving. Startup never inserts sample records or resets your data.
 
-Teacher/account administration, teaching assignments, academic work, timetable, attendance and finance projections remain future domain work. Their live views must show Unavailable instead of sample rows or inferred zero totals. A failed SAMS request also displays unavailable with retry; it is never presented as an empty school.
+Teaching assignments, Teacher assignment publication and Student text submissions use the real backend. Broader account administration, grading, timetable, attendance and finance projections remain future domain work. Their live views must show Unavailable instead of sample rows or inferred zero totals. A failed SAMS request also displays unavailable with retry; it is never presented as an empty school.
 
 ### School identity and white-label settings
 
@@ -221,6 +223,6 @@ Canonical physical migrations live in `supabase/migrations`; Prisma is the typed
 
 Start from the repository root with `npm run dev:iskool`; read the existing local demo credential with `notepad .\Passwords.txt`. No reseed or password rotation is needed. Student and Teacher dashboards show current authorized classes and academic periods; Teachers also see active student counts per class. Use **View all** for the full paginated list. Admin student/enrollment totals use the school registry.
 
-Create and enroll a student as Admin, navigate to the dashboard and reload. Sign in as the assigned Teacher and reload: that class count must increase. Withdraw the enrollment through its student record and reload both dashboards: enrolled counts must decrease, while the student record remains. Unsupported assignments, grading, resources, notifications and timetable are explicitly unavailable; an API failure must not display a fabricated zero.
+Create and enroll a student as Admin, navigate to the dashboard and reload. Sign in as the assigned Teacher and reload: that class count must increase. Withdraw the enrollment through its student record and reload both dashboards: enrolled counts must decrease, while the student record remains. Published assignments and Student submission status also load from APS. Grading, resources, notifications and timetable are explicitly unavailable; an API failure must not display a fabricated zero.
 
 Automated real-development acceptance: `npm run smoke:dashboards` (one browser worker). Requires a linked Student and an assigned Teacher class in a current term, as established by the VIM-52 acceptance workflow. It creates one editable student, enrolls and withdraws it, and retains its history. Full walkthrough: `docs/acceptance/VIM-62-DASHBOARDS.md`.
