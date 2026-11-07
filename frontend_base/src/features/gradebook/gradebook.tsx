@@ -1,12 +1,6 @@
 "use client"
 import { useMemo, useState, useRef } from "react"
 import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-  type ColumnDef,
-} from "@tanstack/react-table"
-import {
   useWorkspace,
   useUnsavedChanges,
 } from "@/features/workspace/workspace-provider"
@@ -59,20 +53,6 @@ export function Gradebook() {
     [w.enrollments, w.submissions, w.grades, w.members, classId, assessmentId]
   )
 
-  const columns = useMemo<ColumnDef<Row>[]>(
-    () => [
-      { accessorKey: "name", header: "Learner" },
-      { id: "score", header: "Mark" },
-      { id: "state", header: "State" },
-    ],
-    []
-  )
-  const table = useReactTable({
-    data: rows,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    autoResetPageIndex: false,
-  })
   const dirty = Object.keys(changes).length > 0
   useUnsavedChanges(dirty)
   const invalid = Object.values(changes).some(
@@ -213,26 +193,20 @@ export function Gradebook() {
             className="w-full table-fixed text-left text-sm"
           >
             <thead>
-              {table.getHeaderGroups().map((group) => (
-                <tr key={group.id}>
-                  {group.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      scope="col"
-                      className="border-b p-2 sm:p-3"
-                    >
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
+              <tr>
+                <th scope="col" className="border-b p-2 sm:p-3">
+                  Learner
+                </th>
+                <th scope="col" className="border-b p-2 sm:p-3">
+                  Mark
+                </th>
+                <th scope="col" className="border-b p-2 sm:p-3">
+                  State
+                </th>
+              </tr>
             </thead>
             <tbody>
-              {table.getRowModel().rows.map((tableRow, index) => {
-                const row = tableRow.original
+              {rows.map((row, index) => {
                 const value =
                   changes[row.id] ??
                   (row.score === null ? "" : String(row.score))
